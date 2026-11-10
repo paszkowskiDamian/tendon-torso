@@ -6,10 +6,25 @@ Local frame: joint axis = X, base below (z<0), rotor above (z>0), origin on the 
   captive M8 nuts (M8x20 stub axles into 608 bearings) + a boss with two
   angled Bowden sockets aimed exactly along the drum tangents + a centre slot
   that lets the tubes of the joints further out pass through.
-* ROTOR: printed as two halves split on the motion plane (x=0), each printed
-  flat on that face. A hollow drum: 608s at the ends, a cavity in the middle
-  for passing tubes, one tendon groove + knotted chord anchor per half, and a
-  top plate with heat-set inserts for the next link.
+* ROTOR: two halves split on the motion plane (x=0). A hollow drum: 608s at
+  the ends, a cavity in the middle for passing tubes, one tendon groove +
+  knotted chord anchor per half, and a top plate with heat-set inserts for
+  the next link.
+
+  PRINT ORIENTATION: each half prints TOP PLATE DOWN (model -Z up, i.e.
+  rotate 180 deg about X). Printed split-face down instead, the drum end cap
+  would have to bridge the open tube window (a ~40 mm cantilever) - no roof
+  shape can fix that. Plate down, everything is self-supporting:
+    - the half plate is the footprint, the neck rises from it, and the neck
+      spans the full drum width (x = 0..-hub_half) and covers the drum top to
+      within 44 deg of the side, so the drum never overhangs;
+    - the tendon groove runs through the neck as a 2.4 mm wide tunnel
+      (2.4 mm bridge) - the cord is threaded through it from the anchor;
+    - the cavity end walls and the split face are vertical; the tube window
+      is widened to cover every part of the cavity whose roof would be
+      steeper than 45 deg (it opens at the top of the print);
+    - bearing pockets, the axle clearance hole and lightening holes are
+      horizontal -> teardrops (50 deg roofs) pointing up the print (-Z).
 
 Cord A lives on the -X half, cord B on the +X half. Rotating +a winds cord A
 on and cord B off (cord A wrap = WA + a, cord B wrap = WB - a).
@@ -22,6 +37,21 @@ import cadquery as cq
 from . import params as P
 from .cad import (box, cut_all, cyl_x, cyl_z, hex_x, insert_holes_up, insert_holes_down,
                   polar, rod, sector_x, yz)
+
+
+WALL = 1.6        # wall between the tube cavity and each 608 pocket (bearing seat)
+TEAR = 50.0       # teardrop / roof angle from horizontal in the print (deg)
+
+
+def teardrop_x(r, x0, x1, y=0.0, z=0.0):
+    """Hole along X with a teardrop roof pointing to -Z (= up when the rotor prints plate down)."""
+    a = math.radians(90.0 - TEAR)               # half angle of the roof at the tip
+    d = r / math.sin(a)
+    t = math.radians(TEAR)
+    tri = (cq.Workplane("YZ").workplane(offset=x0)
+           .polyline([(y + r * math.cos(t), z - r * math.sin(t)), (y, z - d),
+                      (y - r * math.cos(t), z - r * math.sin(t))]).close().extrude(x1 - x0))
+    return cyl_x(r, x0, x1).translate((0, y, z)).union(tri)
 
 
 @dataclass
@@ -55,11 +85,11 @@ class HingeSpec:
 
     @property
     def hub_half(self):
-        return self.cav + 1.0 + P.B608[2]
+        return self.cav + WALL + P.B608[2]
 
     @property
     def gx(self):
-        return self.cav + 1.0 + P.B608[2] / 2
+        return self.cav + WALL + P.B608[2] / 2
 
     @property
     def lug_in(self):
@@ -166,18 +196,23 @@ def rotor_half(s: HingeSpec, side="A"):
         # build B as a mirrored A (phi -> 180-phi under the final Rz180) with its own wrap
         wrap = wb
         sec0, sec1 = -90 + s.lo - 12, -90 + s.hi + 12
-    hub = cyl_x(s.r_hub, -s.hub_half, 0)
-    neck_x = -(s.gx - 2.2)
-    neck_y = min(0.6 * s.r_hub, F["od"] - 6)
-    neck = box(neck_x, 0, -neck_y, neck_y, 6, s.out_bot + 1)
+    H = s.hub_half
+    hub = cyl_x(s.r_hub, -H, 0)
+    # neck over the full drum width; wide enough (>= cos 44 deg * r_hub) that the drum
+    # never overhangs when printed plate down, and inside the plate footprint
+    neck_y = min(0.73 * s.r_hub, F["od"] - 6, math.sqrt(F["od"] ** 2 - H ** 2) - 0.8)
+    neck = box(-H, 0, -neck_y, neck_y, 6, s.out_bot + 1)
     plate = cyl_z(F["od"], s.out_bot, s.out_z).intersect(box(-F["od"] - 1, 0, -F["od"] - 1, F["od"] + 1, s.out_bot - 1, s.out_z + 1))
     body = hub.union(neck).union(plate)
 
+    # tube window: the joint sweep + margin, widened to [-138, -42] deg so that no part of
+    # the cavity roof is steeper than 45 deg in the print (plate down = -Z up)
+    sec0, sec1 = min(sec0, -138.0), max(sec1, -42.0)
     r_cav = s.r_hub - 8.0 if s.R > 25 else s.r_hub - 7.5
     cuts = [
         cyl_x(r_cav, -s.cav, 0.1),
-        cyl_x(9.5, -s.cav - 1.1, -s.cav + 0.1),
-        cyl_x(P.B608[1] / 2 + P.FIT, -s.hub_half - 0.1, -s.cav - 1.0),
+        teardrop_x(9.5, -s.cav - WALL - 0.1, -s.cav + 0.1),                    # axle / inner-race clearance
+        teardrop_x(P.B608[1] / 2 + P.FIT, -H - 0.1, -s.cav - WALL),            # 608 pocket
         box(-(s.cav - 0.5), 0.1, -(s.slot_y + 2), s.slot_y + 2, 4, s.out_z + 1),
         sector_x(-s.cav, 0.1, s.r_hub + 3, sec0, sec1),
     ]
@@ -196,8 +231,8 @@ def rotor_half(s: HingeSpec, side="A"):
         r_l = (11.15 + s.R * math.cos(math.radians(32.5)) - 3) / 2 + 2
         dl = min(10.0, (s.R * math.cos(math.radians(32.5)) - 3 - 11.15) - 4)
         for k in range(6):
-            yy, zz = yz(r_l, 30 + 60 * k)
-            cuts.append(cyl_x(dl / 2, -s.hub_half - 1, -s.cav - 1).translate((0, yy, zz)))
+            yy, zz = yz(r_l, 60 * k)          # clear of the teardrop roof of the 608 pocket
+            cuts.append(teardrop_x(dl / 2, -H - 1, -s.cav - WALL, yy, zz))
     # inserts in the top plate (from the top face down), only the ones on this half
     for a in P.bolt_angles(F["n"]):
         x, y = polar(F["bc"], a)
