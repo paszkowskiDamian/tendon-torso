@@ -134,11 +134,13 @@ def groove_ring(x, r_in, r_out, w):
 def drum_anchor(x, sign=1):
     """Chord hole + knot pocket for one tendon (flexor side, phi from +Y over +Z).
 
+    sign=+1: tendon wraps over the top (drum). sign=-1: wraps under (spool).
+
     The tendon leaves the groove at ANCHOR_WRAP and dives through the drum wall
     on a chord, exiting further round where a knot sits in a counterbore.
     """
-    y0, z0 = polar_yz(R_GROOVE + 0.3, ANCHOR_WRAP)
-    exit_phi = ANCHOR_WRAP + 65
+    y0, z0 = polar_yz(R_GROOVE + 0.3, sign * ANCHOR_WRAP)
+    exit_phi = sign * (ANCHOR_WRAP + 65)
     y1, z1 = polar_yz(R_HUB + 1, exit_phi)
     h = hole_along((x, y0, z0), (x, y1, z1), CORD_D + 1.0)
     # knot pocket at the exit
@@ -260,8 +262,9 @@ def spool():
     cuts.append(cyl_x(R_CAV, -CAV_HALF + 3, CAV_HALF))  # lighten
     for x, rot in ((-GROOVE_X, 0), (GROOVE_X, 180)):
         cuts.append(groove_ring(x, R_GROOVE, R_HUB, GROOVE_W))
-    cuts.append(drum_anchor(-GROOVE_X))
-    cuts.append(drum_anchor(GROOVE_X).rotate((0, 0, 0), (0, 0, 1), 180))
+    # tendons arrive from ABOVE, so they wrap under the spool: anchors at -135 deg
+    cuts.append(drum_anchor(-GROOVE_X, sign=-1))
+    cuts.append(drum_anchor(-GROOVE_X, sign=-1).rotate((0, 0, 0), (0, 0, 1), 180))
     # 4 horn screw holes (M2 self-tappers that came with the servo)
     for a in range(0, 360, 90):
         y, z = polar_yz(HORN_HOLE_R, a + 45)

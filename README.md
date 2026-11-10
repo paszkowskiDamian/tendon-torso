@@ -14,6 +14,10 @@ We build it up one joint at a time.
 | J1b: two stacked joints, motors remote | next |
 | Gripper, shoulder, full arm, torso | see [roadmap](docs/roadmap.md) |
 
+## Interactive viewer
+
+An animated 3D assembly showing how the tendons wind is in [`docs/viewer/`](docs/viewer/). Run `python3 -m http.server -d docs/viewer` and open http://localhost:8000.
+
 ## Repo layout
 
 ```

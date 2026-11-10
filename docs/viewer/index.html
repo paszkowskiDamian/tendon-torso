@@ -1,0 +1,363 @@
+<meta charset="utf-8">
+<title>J1 Tendon Hinge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: workshop bench — big orbitable model on the left, a slim instrument panel on the right that stacks under it on phones. */
+:root {
+  --bg: #eef0f2;
+  --panel: #ffffff;
+  --ink: #1b2229;
+  --muted: #5d6874;
+  --line: #d5dae0;
+  --accent: #2f6fd6;
+  --flex: #d6452f;
+  --ext: #2f6fd6;
+  --pass: #2f9b5a;
+  --stage: #e3e7eb;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161b; --panel: #1a2027; --ink: #e6ebf0; --muted: #94a0ad; --line: #2c343d;
+    --accent: #6ea2ff; --flex: #ff6b55; --ext: #6ea2ff; --pass: #4fcf86; --stage: #161b21; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161b; --panel: #1a2027; --ink: #e6ebf0; --muted: #94a0ad; --line: #2c343d;
+  --accent: #6ea2ff; --flex: #ff6b55; --ext: #6ea2ff; --pass: #4fcf86; --stage: #161b21; color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px;
+  box-sizing: border-box;
+}
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; height: 100%; min-height: 560px; }
+.stage { position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; min-height: 420px; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+canvas:active { cursor: grabbing; }
+.hint { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
+.angle-badge { position: absolute; right: 12px; top: 10px; font-family: var(--mono); font-size: 28px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink); }
+.angle-badge small { font-size: 12px; color: var(--muted); display: block; text-align: right; font-family: var(--body); }
+aside { display: flex; flex-direction: column; gap: 14px; min-width: 0; overflow-y: auto; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.sub { color: var(--muted); margin: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+button {
+  font: 500 13px var(--body); color: var(--ink); background: transparent; border: 1px solid var(--line);
+  border-radius: 7px; padding: 6px 12px; cursor: pointer;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.toggles label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.readout { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; font-size: 13px; align-items: center; }
+.readout .v { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.sum { border-top: 1px solid var(--line); padding-top: 6px; grid-column: 1 / -1; display: flex; justify-content: space-between; color: var(--muted); }
+.sum .v { color: var(--ink); }
+ol { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
+ol li::marker { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.k-flex { color: var(--flex); font-weight: 600; } .k-ext { color: var(--ext); font-weight: 600; } .k-pass { color: var(--pass); font-weight: 600; }
+a { color: var(--accent); }
+@media (max-width: 820px) {
+  html, body { height: auto; }
+  .app { grid-template-columns: 1fr; height: auto; }
+  .stage { height: 62vh; min-height: 360px; }
+}
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D model of the J1 tendon hinge"></canvas>
+    <div class="loading" id="loading">loading parts…</div>
+    <div class="angle-badge"><span id="angBig">0°</span><small>joint angle</small></div>
+    <div class="hint">Drag to orbit · scroll or pinch to zoom · right-drag to pan</div>
+  </div>
+
+  <aside>
+    <div>
+      <h1>J1 Tendon Hinge</h1>
+      <p class="sub">One servo in the base, two tendons in the core, open center for the next joints.</p>
+    </div>
+
+    <div class="card">
+      <span class="label">Motion</span>
+      <div class="row">
+        <button class="primary" id="play" type="button">Pause</button>
+        <button id="zero" type="button">Center</button>
+        <button id="view" type="button">Side view</button>
+      </div>
+      <input type="range" id="ang" min="-90" max="90" step="1" value="0" aria-label="Joint angle in degrees">
+      <div class="toggles">
+        <label><input type="checkbox" id="xray" checked> X-ray links</label>
+        <label><input type="checkbox" id="pass" checked> Pass-through cord</label>
+        <label><input type="checkbox" id="hideDist"> Hide one distal half</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="label">Tendon wrap</span>
+      <div class="readout">
+        <span class="sw" style="background:var(--flex)"></span><span>Flexor on drum</span><span class="v" id="fD">135°</span>
+        <span class="sw" style="background:var(--flex)"></span><span>Flexor on spool</span><span class="v" id="fS">135°</span>
+        <span class="sw" style="background:var(--ext)"></span><span>Extensor on drum</span><span class="v" id="eD">135°</span>
+        <span class="sw" style="background:var(--ext)"></span><span>Extensor on spool</span><span class="v" id="eS">135°</span>
+        <div class="sum"><span>Each loop: drum + spool</span><span class="v" id="sum">270° · const</span></div>
+        <span class="sw" style="background:var(--pass)"></span><span>Pass-through length change</span><span class="v">0.0 mm</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="label">How it works</span>
+      <ol>
+        <li>The servo turns the <b>spool</b>. Spool and drum are both r&nbsp;=&nbsp;15.5&nbsp;mm, so joint angle = servo angle.</li>
+        <li>The <span class="k-flex">flexor</span> and <span class="k-ext">extensor</span> wrap in opposite directions. One winds on while the other pays out by the same length, so a single motor drives both ways and the loop never goes slack.</li>
+        <li>Both run as straight vertical lines inside the hollow link: no pulleys, almost no friction.</li>
+        <li>The bearings sit at the drum ends, so the middle is empty. The <span class="k-pass">pass-through cord</span> crosses the joint on its axis and keeps its length at any angle. That's how tendons for the elbow, wrist and gripper will travel down from the torso.</li>
+      </ol>
+    </div>
+    <p class="sub" style="font-size:12px">Source, STL files and build guide: <a href="https://github.com/paszkowskiDamian/tendon-torso" target="_blank" rel="noopener">github.com/paszkowskiDamian/tendon-torso</a></p>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  const G = { spoolZ: -155, R: 15.5, GX: 14.5, wrap: 135, servo: { L: 40.7, W: 19.9, off: 10.2, horn: 18 } };
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const canvas = document.getElementById('c');
+  const stage = document.getElementById('stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
+  camera.up.set(0, 0, 1);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(200, -300, 400); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-300, 200, 100); scene.add(fill);
+
+  // ---------- STL parser (binary + ascii)
+  function parseSTL(buf) {
+    const dv = new DataView(buf);
+    const n = dv.getUint32(80, true);
+    const pos = new Float32Array(n * 9), nor = new Float32Array(n * 9);
+    if (84 + n * 50 === buf.byteLength) {
+      for (let i = 0; i < n; i++) {
+        const o = 84 + i * 50;
+        const nx = dv.getFloat32(o, true), ny = dv.getFloat32(o + 4, true), nz = dv.getFloat32(o + 8, true);
+        for (let v = 0; v < 3; v++) {
+          const q = o + 12 + v * 12, k = i * 9 + v * 3;
+          pos[k] = dv.getFloat32(q, true); pos[k + 1] = dv.getFloat32(q + 4, true); pos[k + 2] = dv.getFloat32(q + 8, true);
+          nor[k] = nx; nor[k + 1] = ny; nor[k + 2] = nz;
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.computeVertexNormals();
+      return g;
+    }
+    const txt = new TextDecoder().decode(buf);
+    const re = /vertex\s+(\S+)\s+(\S+)\s+(\S+)/g; const arr = []; let m;
+    while ((m = re.exec(txt))) arr.push(+m[1], +m[2], +m[3]);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+    g.computeVertexNormals();
+    return g;
+  }
+
+  const mats = {};
+  function mat(name, color) {
+    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.05, side: THREE.DoubleSide });
+    mats[name] = m; return m;
+  }
+  const colors = { base: 0x8c96a0, proximal: 0xe3a043, spool: 0x3f6fb5, distal_a: 0x5aa469, distal_b: 0x77bb85, servo: 0x30353b };
+
+  const jointPivot = new THREE.Group(); scene.add(jointPivot);
+  const spoolPivot = new THREE.Group(); spoolPivot.position.set(0, 0, G.spoolZ); scene.add(spoolPivot);
+  const meshes = {};
+
+  // servo stand-in (body + tabs + horn)
+  const servo = new THREE.Group();
+  const sm = mat('servo', colors.servo);
+  const caseTop = -G.servo.horn - 6;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(38, G.servo.L, G.servo.W), sm);
+  body.position.set(caseTop - 19, -G.servo.off, G.spoolZ); servo.add(body);
+  const tabs = new THREE.Mesh(new THREE.BoxGeometry(2.5, 54.5, G.servo.W), sm);
+  tabs.position.set(-G.servo.horn - 17 + 1.25, -G.servo.off, G.spoolZ); servo.add(tabs);
+  const horn = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 6, 32), mat('horn', 0xeeeeee));
+  horn.rotation.z = Math.PI / 2; horn.position.set(-G.servo.horn - 3, 0, G.spoolZ); servo.add(horn);
+  scene.add(servo);
+
+  // ---------- tendons
+  const tendonMat = {
+    flex: new THREE.MeshStandardMaterial({ color: 0xd6452f, roughness: 0.4 }),
+    ext: new THREE.MeshStandardMaterial({ color: 0x2f6fd6, roughness: 0.4 }),
+    pass: new THREE.MeshStandardMaterial({ color: 0x2f9b5a, roughness: 0.4 }),
+  };
+  const tendonMeshes = { flex: null, ext: null, pass: null };
+  const rad = d => d * Math.PI / 180;
+  function arc(x, cz, r, p0, p1, steps) {
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const p = rad(p0 + (p1 - p0) * i / steps);
+      pts.push(new THREE.Vector3(x, r * Math.cos(p), cz + r * Math.sin(p)));
+    }
+    return pts;
+  }
+  function tube(name, pts) {
+    if (tendonMeshes[name]) { scene.remove(tendonMeshes[name]); tendonMeshes[name].geometry.dispose(); }
+    const path = new THREE.CurvePath();
+    for (let i = 0; i < pts.length - 1; i++) path.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
+    const g = new THREE.TubeGeometry(path, Math.max(8, pts.length * 2), 0.9, 8, false);
+    const m = new THREE.Mesh(g, tendonMat[name]); scene.add(m); tendonMeshes[name] = m;
+  }
+  function updateTendons(a) {
+    const { R, GX, wrap, spoolZ } = G;
+    // flexor (x = -GX): drum anchor at wrap+a  ->  over top  ->  tangent at y=+R  ->  down  ->  spool under to a-wrap
+    const fDrum = arc(-GX, 0, R, wrap + a, 0, 30);
+    const fSpool = arc(-GX, spoolZ, R, 0, a - wrap, 30);
+    tube('flex', fDrum.concat(fSpool));
+    // extensor (x = +GX): drum anchor at 180-wrap+a -> tangent at y=-R (180) -> down -> spool from 180 to 180+wrap+a
+    const eDrum = arc(GX, 0, R, 180 - wrap + a, 180, 30);
+    const eSpool = arc(GX, spoolZ, R, 180, 180 + wrap + a, 30);
+    tube('ext', eDrum.concat(eSpool));
+    // pass-through: straight up the core, crosses the axis, follows the distal link
+    const up = new THREE.Vector3(0, -Math.sin(rad(a)), Math.cos(rad(a)));
+    const passPts = [new THREE.Vector3(0, 0, -180), new THREE.Vector3(0, 0, 0), up.clone().multiplyScalar(145)];
+    tube('pass', passPts);
+    tendonMeshes.pass.visible = document.getElementById('pass').checked;
+
+    document.getElementById('fD').textContent = Math.round(wrap + a) + '°';
+    document.getElementById('fS').textContent = Math.round(wrap - a) + '°';
+    document.getElementById('eD').textContent = Math.round(wrap - a) + '°';
+    document.getElementById('eS').textContent = Math.round(wrap + a) + '°';
+    document.getElementById('sum').textContent = (2 * wrap) + '° · constant';
+    const s = (a > 0 ? '+' : '') + Math.round(a) + '°';
+    document.getElementById('angBig').textContent = s;
+  }
+
+  function setAngle(a) {
+    jointPivot.rotation.x = rad(a);
+    spoolPivot.rotation.x = rad(a);
+    updateTendons(a);
+  }
+
+  // ---------- load parts
+  const files = ['base', 'proximal', 'spool', 'distal_a', 'distal_b'];
+  Promise.all(files.map(f => fetch('models/' + f + '.stl').then(r => {
+    if (!r.ok) throw new Error(f + '.stl: HTTP ' + r.status);
+    return r.arrayBuffer();
+  }))).then(bufs => {
+    bufs.forEach((b, i) => {
+      const name = files[i];
+      const mesh = new THREE.Mesh(parseSTL(b), mat(name, colors[name]));
+      meshes[name] = mesh;
+      if (name.startsWith('distal')) jointPivot.add(mesh);
+      else if (name === 'spool') { mesh.position.z = 0; spoolPivot.add(mesh); }
+      else scene.add(mesh);
+    });
+    document.getElementById('loading').hidden = true;
+    applyXray();
+    setAngle(0);
+  }).catch(err => {
+    document.getElementById('loading').textContent = 'Could not load the parts (' + err.message + '). Reload the page to try again.';
+  });
+
+  function applyXray() {
+    const on = document.getElementById('xray').checked;
+    ['base', 'proximal', 'distal_a', 'distal_b'].forEach(n => {
+      const m = mats[n]; if (!m) return;
+      m.transparent = on; m.opacity = on ? (n === 'base' ? 0.35 : 0.28) : 1; m.depthWrite = !on; m.needsUpdate = true;
+    });
+  }
+
+  // ---------- camera controls (orbit / zoom / pan)
+  const target = new THREE.Vector3(0, 0, -40);
+  let theta = rad(-58), phi = rad(14), dist = 520;
+  function placeCamera() {
+    camera.position.set(
+      target.x + dist * Math.cos(phi) * Math.cos(theta),
+      target.y + dist * Math.cos(phi) * Math.sin(theta),
+      target.z + dist * Math.sin(phi));
+    camera.lookAt(target);
+  }
+  let drag = null;
+  canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, pan: e.button === 2 || e.shiftKey }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointerup', () => drag = null);
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  const pointers = new Map(); let pinch0 = null;
+  canvas.addEventListener('pointerdown', e => { pointers.set(e.pointerId, e); });
+  canvas.addEventListener('pointerup', e => { pointers.delete(e.pointerId); pinch0 = null; });
+  canvas.addEventListener('pointermove', e => {
+    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, e);
+    if (pointers.size === 2) {
+      const [p, q] = [...pointers.values()];
+      const d = Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY);
+      if (pinch0) dist = Math.min(1500, Math.max(120, dist * pinch0 / d));
+      pinch0 = d; placeCamera(); return;
+    }
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    if (drag.pan) {
+      const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+      const upv = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+      const s = dist / 900;
+      target.addScaledVector(right, -dx * s).addScaledVector(upv, dy * s);
+    } else {
+      theta -= dx * 0.008; phi = Math.min(1.45, Math.max(-1.45, phi + dy * 0.008));
+    }
+    placeCamera();
+  });
+  canvas.addEventListener('wheel', e => { e.preventDefault(); dist = Math.min(1500, Math.max(120, dist * (1 + Math.sign(e.deltaY) * 0.08))); placeCamera(); }, { passive: false });
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+
+  // ---------- UI
+  const slider = document.getElementById('ang');
+  const playBtn = document.getElementById('play');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let playing = !reduce, t = 0, last = performance.now();
+  playBtn.textContent = playing ? 'Pause' : 'Play';
+  playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? 'Pause' : 'Play'; };
+  slider.oninput = () => { playing = false; playBtn.textContent = 'Play'; setAngle(+slider.value); };
+  document.getElementById('zero').onclick = () => { playing = false; playBtn.textContent = 'Play'; slider.value = 0; setAngle(0); };
+  let side = false;
+  document.getElementById('view').onclick = e => {
+    side = !side; e.target.textContent = side ? '3/4 view' : 'Side view';
+    if (side) { theta = 0; phi = 0; } else { theta = rad(-58); phi = rad(14); }
+    placeCamera();
+  };
+  document.getElementById('xray').onchange = applyXray;
+  document.getElementById('pass').onchange = e => { if (tendonMeshes.pass) tendonMeshes.pass.visible = e.target.checked; };
+  document.getElementById('hideDist').onchange = e => { if (meshes.distal_b) meshes.distal_b.visible = !e.target.checked; };
+
+  placeCamera(); resize();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (playing && meshes.distal_a) {
+      t += dt;
+      const a = 85 * Math.sin(t * 0.9);
+      slider.value = Math.round(a); setAngle(a);
+    }
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
