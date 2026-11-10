@@ -76,6 +76,11 @@ END_T = 6.0
 TAB_Z = (72.0, 112.0, 148.0)
 
 TUBE_OD, TUBE_ID = 4.0, 2.0       # PTFE Bowden liner
+# "mount" end (J1b): flange that carries the next joint module
+MOUNT_FLANGE_R = 28.0
+MOUNT_OPEN_D = 26.0
+MOUNT_BOLT = 17.0                 # +/- square pattern, 90-deg symmetric
+INSERT_D, INSERT_DEPTH = 4.0, 6.0 # M3 heat-set insert (or 2.8 mm for self-tapping)
 TUBE_X = (-5.0, 0.0, 5.0)
 
 M3_CLR, M3_HEAD_D, M3_NUT_AF = 3.4, 6.2, 5.6
@@ -115,7 +120,10 @@ def tendon_y_at(z):
 
 
 # ---------------------------------------------------------------- distal half
-def distal_half():
+def distal_half(end="bowden"):
+    """end="bowden": Bowden test sockets in the end plate (J1-S).
+    end="mount": flanged end with 4 heat-set inserts and a 26 mm opening, to carry the J2 module (J1b).
+    """
     hub = cyl_x(R_HUB, -HUB_HALF, 0)
     neck_x = -(GROOVE_X - GROOVE_W / 2 - 0.8)          # 9.5: tendon clears the neck
     neck = box(neck_x, 0, -20, 20, 20, DIST_START + 5)
@@ -123,6 +131,9 @@ def distal_half():
     tube = (cq.Workplane("XY").workplane(offset=DIST_START).circle(DIST_OD / 2).extrude(DIST_LEN)
             .intersect(box(-DIST_OD, 0, -DIST_OD, DIST_OD, DIST_START, top)))
     body = hub.union(neck).union(tube)
+    if end == "mount":
+        body = body.union(cq.Workplane("XY").workplane(offset=top - END_T).circle(MOUNT_FLANGE_R).extrude(END_T)
+                          .intersect(box(-40, 0, -40, 40, top - END_T, top)))
     tab_y = DIST_OD / 2 + 4.5
     for z in TAB_Z:
         body = body.union(box(-6, 0, DIST_OD / 2 - 3, tab_y + 4.5, z - 5, z + 5))
@@ -154,6 +165,14 @@ def distal_half():
             cuts.append(hole_along((-7, y, z), (1, y, z), M3_CLR))
             cuts.append(hole_along((-7, y, z), (-3.5, y, z), M3_HEAD_D) if s > 0
                         else hex_prism_x(-7, -3.5, y, z, M3_NUT_AF))
+    if end == "mount":
+        cuts.append(cq.Workplane("XY").workplane(offset=top - END_T - 1).circle(MOUNT_OPEN_D / 2).extrude(END_T + 2))
+        for y in (-MOUNT_BOLT, MOUNT_BOLT):
+            cuts.append(cq.Workplane("XY").workplane(offset=top - INSERT_DEPTH).center(-MOUNT_BOLT, y)
+                        .circle(INSERT_D / 2).extrude(INSERT_DEPTH + 1))
+        for c in cuts:
+            body = body.cut(c)
+        return body
     # Bowden sockets in the end plate (tube pushed in from below, cord exits on top)
     for x in TUBE_X:
         if x > 0.1:
@@ -172,7 +191,8 @@ def distal_half():
 
 
 # ---------------------------------------------------------------- proximal
-def proximal():
+def proximal(cap_style="sockets"):
+    """cap_style="sockets": blind Bowden sockets (J1-S test). cap_style="through": tubes pass through to the base (J1b)."""
     cap_bot = CAP_TOP - CAP_T
     tb = tube_bot()
     lug_in = HUB_HALF + LUG_GAP
@@ -199,6 +219,9 @@ def proximal():
         cuts.append(cq.Workplane("XY").workplane(offset=cap_bot - 1).center(x, y).slot2D(5.0, 3.0, 90).extrude(CAP_T + 2))
     # Bowden sockets in the cap (tube pushed in from above)
     for x in TUBE_X:
+        if cap_style == "through":
+            cuts.append(cq.Workplane("XY").workplane(offset=cap_bot - 1).center(x, 0).circle(TUBE_OD / 2 + 0.25).extrude(CAP_T + 2))
+            continue
         cuts.append(cq.Workplane("XY").workplane(offset=CAP_TOP - 4).center(x, 0).circle(TUBE_OD / 2 + 0.15).extrude(5))
         cuts.append(cq.Workplane("XY").workplane(offset=cap_bot - 1).center(x, 0).circle(TUBE_ID / 2 + 0.2).extrude(CAP_T + 2))
     # M8 stub axle + captive nut

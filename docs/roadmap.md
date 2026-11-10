@@ -30,7 +30,7 @@ Bowden sheaths (cable inside a tube, like bike brakes) avoid coupling completely
 |---|---|---|---|
 | **J1** | 1-DOF hinge, servo in base, open center | tendon pair, tensioning, printability, pass-through | **designed**, ready to print |
 | **J1-S** | J1 with NEMA17 + 6:1 tendon reduction, Bowden-ready center | torque via tendon ratio, stepper stiffness, Bowden friction & coupling | **designed**, ready to print |
-| J1b | Two J1 stacked (elbow + wrist), both motors in the base | multi-joint pass-through, measured coupling, compensation code | next |
+| **J1b** | J1-S elbow + J2 wrist module, J2 driven by Bowden cables from a separate drive module | multi-joint routing, Bowden friction & coupling, swappable J2 orientation | **designed**, ready to print |
 | G1 | Simple gripper: 1 tendon + return spring (or antagonistic pair) at the end of J1b | end effector driven from far away | |
 | S1 | 2-DOF shoulder (pitch + roll) with an open center | the hard routing problem | |
 | A1 | Full arm: shoulder (2–3) + elbow + wrist (1–2) + gripper = 5–7 DOF | | |
