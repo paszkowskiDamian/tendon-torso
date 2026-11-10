@@ -95,7 +95,7 @@ def export_arm():
         "chain": chain,
         "cranks": {j: {"m": m.tolist(), "ratio": A.crank_ratio(j)} for j, m in A.crank_frames().items()},
         "racks": [[x, y] for x, y in A.RACK_CENTRES],
-        "crank": {"r": C.R_SPOOL, "sock_x": C.SOCK_X, "block_z": C.BLOCK_Z[0], "beam_z": C.BEAM_Z[1]},
+        "crank": {"r": C.R_SPOOL, "sock_x": C.SOCK_X, "sock_b": C.SOCK_B, "block_z": C.BLOCK_Z[0], "beam_z": C.BEAM_Z[1]},
         "beam": {"y0": T.BEAM_Y[0], "y1": T.BEAM_Y[1], "h": T.BEAM_H, "s1_y": T.S1_Y},
     }
     with open(OUT / "arm_chain.json", "w") as f:

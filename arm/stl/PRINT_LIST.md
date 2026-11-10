@@ -1,20 +1,20 @@
 | File | Qty | Size (mm) | Notes |
 |---|---|---|---|
-| `s1_base.stl` | 1 | 98 x 52 x 86 | S1 hinge base - plate down |
-| `s1_rotor_a.stl` | 1 | 119 x 104 x 52 | S1 rotor half A - split face down |
-| `s1_rotor_b.stl` | 1 | 119 x 104 x 52 | S1 rotor half B - split face down |
+| `s1_base.stl` | 1 | 99 x 52 x 86 | S1 hinge base - plate down |
+| `s1_rotor_a.stl` | 1 | 52 x 104 x 119 | S1 rotor half A - top plate down |
+| `s1_rotor_b.stl` | 1 | 52 x 104 x 119 | S1 rotor half B - top plate down |
 | `s2_base.stl` | 1 | 104 x 104 x 86 | S2 hinge base - plate down |
-| `s2_rotor_a.stl` | 1 | 107 x 104 x 52 | S2 rotor half A - split face down |
-| `s2_rotor_b.stl` | 1 | 107 x 104 x 52 | S2 rotor half B - split face down |
-| `e_base.stl` | 1 | 70 x 70 x 79 | E hinge base - plate down |
-| `e_rotor_a.stl` | 1 | 95 x 76 x 32 | E rotor half A - split face down |
-| `e_rotor_b.stl` | 1 | 95 x 76 x 32 | E rotor half B - split face down |
+| `s2_rotor_a.stl` | 1 | 52 x 104 x 107 | S2 rotor half A - top plate down |
+| `s2_rotor_b.stl` | 1 | 52 x 104 x 107 | S2 rotor half B - top plate down |
+| `e_base.stl` | 1 | 71 x 71 x 79 | E hinge base - plate down |
+| `e_rotor_a.stl` | 1 | 32 x 76 x 95 | E rotor half A - top plate down |
+| `e_rotor_b.stl` | 1 | 32 x 76 x 95 | E rotor half B - top plate down |
 | `w1_base.stl` | 1 | 64 x 64 x 60 | W1 hinge base - plate down |
-| `w1_rotor_a.stl` | 1 | 63 x 64 x 32 | W1 rotor half A - split face down |
-| `w1_rotor_b.stl` | 1 | 63 x 64 x 32 | W1 rotor half B - split face down |
+| `w1_rotor_a.stl` | 1 | 32 x 64 x 63 | W1 rotor half A - top plate down |
+| `w1_rotor_b.stl` | 1 | 32 x 64 x 63 | W1 rotor half B - top plate down |
 | `w2_base.stl` | 1 | 64 x 64 x 60 | W2 hinge base - plate down |
-| `w2_rotor_a.stl` | 1 | 63 x 64 x 32 | W2 rotor half A - split face down |
-| `w2_rotor_b.stl` | 1 | 63 x 64 x 32 | W2 rotor half B - split face down |
+| `w2_rotor_a.stl` | 1 | 32 x 64 x 63 | W2 rotor half A - top plate down |
+| `w2_rotor_b.stl` | 1 | 32 x 64 x 63 | W2 rotor half B - top plate down |
 | `s3_stator.stl` | 1 | 126 x 126 x 43 | S3 roll stator - plate down |
 | `s3_rotor.stl` | 1 | 86 x 86 x 42 | S3 roll rotor - top plate down |
 | `s3_retainer.stl` | 1 | 32 x 32 x 3 | S3 bearing retainer |

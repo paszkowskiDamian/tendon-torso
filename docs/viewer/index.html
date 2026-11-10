@@ -446,7 +446,7 @@ a { color: var(--accent); }
       const e = J[k], ci = KEYS.indexOf(k);
       const ox = ((ci % 4) - 1.5) * 4.2 + s * 1.2, oy = (Math.floor(ci / 4) - 0.5) * 4.6;
       const c = D.crank, cr = CR[k].g;
-      const sx = s < 0 ? c.sock_x : -c.sock_x, syy = s < 0 ? c.r : -c.r;
+      const sx = s < 0 ? c.sock_x : (c.sock_b ?? -c.sock_x), syy = s < 0 ? c.r : -c.r;
       const pts = [P(cr, sx, syy, c.block_z + 10), P(cr, sx, syy, c.beam_z + 40)];
       const by = D.beam.y1, s1y = D.beam.s1_y;
       pts.push(V(ox * 2, by - 6, 30 + oy), V(ox * 1.5, 0, 28 + oy), V(ox, s1y + 30, 22 + oy));

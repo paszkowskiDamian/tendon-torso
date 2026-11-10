@@ -1,0 +1,483 @@
+[
+ {
+  "file": "crank_arm.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   82.0,
+   26.0,
+   10.5
+  ],
+  "worst_bridge_span": 2.6,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "crank_frame.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   51.0,
+   80.0,
+   132.0
+  ],
+  "worst_bridge_span": 5.3,
+  "thin_wall_fraction": 0.0042,
+  "pass": true
+ },
+ {
+  "file": "crank_knob.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   14.0,
+   14.0,
+   26.0
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "crank_lock_pin.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   12.0,
+   12.0,
+   18.0
+  ],
+  "worst_bridge_span": 4.0,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "crank_nut_cup.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   24.0,
+   24.0,
+   12.5
+  ],
+  "worst_bridge_span": 2.6,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "crank_socket_block.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.4,
+   26.0,
+   10.0
+  ],
+  "worst_bridge_span": 1.8,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "crank_spool.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   20.6,
+   20.6,
+   33.0
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.006,
+  "pass": true
+ },
+ {
+  "file": "e_base.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   71.3,
+   71.3,
+   79.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0033,
+  "pass": true
+ },
+ {
+  "file": "e_rotor_a.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.0,
+   76.0,
+   95.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0012,
+  "pass": true
+ },
+ {
+  "file": "e_rotor_b.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.0,
+   76.0,
+   95.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0017,
+  "pass": true
+ },
+ {
+  "file": "f_retainer.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   27.4,
+   27.4,
+   3.0
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "f_rotor.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   64.0,
+   64.0,
+   42.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0028,
+  "pass": true
+ },
+ {
+  "file": "f_stator.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   122.0,
+   122.0,
+   42.6
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0037,
+  "pass": true
+ },
+ {
+  "file": "idler_tyre.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   16.0,
+   16.0,
+   5.0
+  ],
+  "worst_bridge_span": 1.0,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "link_e_f.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   122.0,
+   122.0,
+   55.0
+  ],
+  "worst_bridge_span": 1.7,
+  "thin_wall_fraction": 0.0087,
+  "pass": true
+ },
+ {
+  "file": "link_forearm.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   64.0,
+   64.0,
+   41.0
+  ],
+  "worst_bridge_span": 1.7,
+  "thin_wall_fraction": 0.0033,
+  "pass": true
+ },
+ {
+  "file": "link_s1_s2.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   104.0,
+   104.0,
+   22.0
+  ],
+  "worst_bridge_span": 2.5,
+  "thin_wall_fraction": 0.0013,
+  "pass": true
+ },
+ {
+  "file": "link_s2_s3.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   126.0,
+   126.0,
+   60.0
+  ],
+  "worst_bridge_span": 1.7,
+  "thin_wall_fraction": 0.0033,
+  "pass": true
+ },
+ {
+  "file": "link_upper.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   86.0,
+   86.0,
+   64.0
+  ],
+  "worst_bridge_span": 1.7,
+  "thin_wall_fraction": 0.0053,
+  "pass": true
+ },
+ {
+  "file": "link_w1_w2.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   64.0,
+   64.0,
+   22.0
+  ],
+  "worst_bridge_span": 2.3,
+  "thin_wall_fraction": 0.0012,
+  "pass": true
+ },
+ {
+  "file": "s1_base.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   99.2,
+   52.0,
+   86.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0022,
+  "pass": true
+ },
+ {
+  "file": "s1_rotor_a.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   52.0,
+   104.0,
+   119.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0012,
+  "pass": true
+ },
+ {
+  "file": "s1_rotor_b.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   52.0,
+   104.0,
+   119.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.001,
+  "pass": true
+ },
+ {
+  "file": "s2_base.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   104.0,
+   104.0,
+   86.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0022,
+  "pass": true
+ },
+ {
+  "file": "s2_rotor_a.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   52.0,
+   104.0,
+   107.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0005,
+  "pass": true
+ },
+ {
+  "file": "s2_rotor_b.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   52.0,
+   104.0,
+   107.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0013,
+  "pass": true
+ },
+ {
+  "file": "s3_retainer.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.4,
+   32.4,
+   3.0
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "s3_rotor.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   86.0,
+   86.0,
+   42.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0022,
+  "pass": true
+ },
+ {
+  "file": "s3_stator.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   126.0,
+   126.0,
+   42.6
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0038,
+  "pass": true
+ },
+ {
+  "file": "torso_crank_rack.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   216.0,
+   96.0,
+   5.0
+  ],
+  "worst_bridge_span": 1.4,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "torso_shoulder_beam.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   100.0,
+   240.0,
+   52.0
+  ],
+  "worst_bridge_span": 3.0,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "w1_base.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   64.0,
+   64.0,
+   60.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0042,
+  "pass": true
+ },
+ {
+  "file": "w1_rotor_a.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.0,
+   64.0,
+   63.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0045,
+  "pass": true
+ },
+ {
+  "file": "w1_rotor_b.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.0,
+   64.0,
+   63.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0045,
+  "pass": true
+ },
+ {
+  "file": "w2_base.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   64.0,
+   64.0,
+   60.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.0028,
+  "pass": true
+ },
+ {
+  "file": "w2_rotor_a.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.0,
+   64.0,
+   63.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.004,
+  "pass": true
+ },
+ {
+  "file": "w2_rotor_b.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.0,
+   64.0,
+   63.0
+  ],
+  "worst_bridge_span": 2.0,
+  "thin_wall_fraction": 0.004,
+  "pass": true
+ }
+]

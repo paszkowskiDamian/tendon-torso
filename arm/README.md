@@ -35,15 +35,15 @@ crank ×7 ──PTFE tubes──► shoulder beam ──► S1 ─ S2 ─ link �
     * The drum is hollow, with the bearings at its ends.
     * Each half has one cord groove with a knotted chord anchor.
     * A top plate with inserts holds the next link.
-* **Roll module** (`roll.py`): stator + rotor + retainer + 2 idlers.
+* **Roll module** (`roll.py`): stator + rotor + retainer + 2 idlers. Check the race shoulder sizes of the 6806/6805 you buy against `roll.py`.
   * The stator tube carries two thin-section bearings.
   * The rotor ring holds their outer races and has two grooves.
   * Each cord comes up from a socket in the stator plate and turns 90° over a 623 idler pulley onto the rotor.
   * The bore stays open for the tubes going further down.
 * **Links** (`link.py`):
-  * tapered tubes with outward bolting lips;
-  * the bolt heads sit on the lips, so every joint can be bolted from the outside;
-  * small 45° ribs under the top lip make them printable without supports.
+  * tubes with outward bolting lips, bolt heads on the lips;
+  * a full 48° cone carries the top lip, with a counterbore up through it for each bolt head;
+  * on the S→XM link the bottom bolts are reached with a hex key from inside the wide bore.
 * **Crank module** (`crank.py`):
   * an M8 shaft on two 608s, with a helical spool clamped between them;
   * a crank arm with a **lock pin** that indexes every 10° on a ring of holes;
@@ -51,6 +51,24 @@ crank ×7 ──PTFE tubes──► shoulder beam ──► S1 ─ S2 ─ link �
 * **Torso** (`torso.py`):
   * a U-channel shoulder beam that screws onto the table and overhangs its edge, with S1 bolted underneath;
   * crank racks for 3 cranks each.
+
+## Printability (`tools/printability.py`)
+
+**All 37 parts print without supports** in the orientation they are exported in. The check:
+* no overhang steeper than 45°;
+* no flat bridge wider than about 8 mm;
+* no wall under 1.2 mm;
+* one watertight body per part, fitting a 250 mm bed.
+
+Notable orientations:
+* **Hinge rotor halves** print **top plate down**. Their tube window opens upward, the bearing pockets are teardrops, and the drum top is covered by the neck. Near the top of the drum the cord runs through a short closed channel in the neck: thread it with a CA-stiffened tip after tying the knot.
+* **Roll rotors** print top plate down.
+* **The crank spool** prints standing on its boss. Its grooves are 0.5 mm deep at 1.9 mm pitch, about 3.4 turns per cord.
+* **Crank frames** print foot down. The top beam has a 48° roof and the bearing holes are teardrops.
+
+```bash
+.venv/bin/python -m arm.export && .venv/bin/python tools/printability.py arm/stl
+```
 
 ## Checked in CAD (`tools/check_arm.py`)
 
@@ -95,14 +113,14 @@ crank ×7 ──PTFE tubes──► shoulder beam ──► S1 ─ S2 ─ link �
 | 24 | 608ZZ bearing (8×22×7) | 2 per hinge (10), 2 per crank (14) |
 | 2 | 6806-2RS (30×42×7) | upper-arm rotation |
 | 2 | 6805-2RS (25×37×7) | forearm twist |
-| 4 | 623ZZ (3×10×4) + M3×16 bolt + nut | roll idlers |
+| 4 | 623ZZ (3×10×4) + M3×12 bolt (self-taps into the inner cheek, no nut) | roll idlers |
 | 10 | M8×20 bolt, M8 nut, M8 washer | hinge stub axles |
-| 7 | M8×70 bolt + M8 nut | crank shafts |
+| 7 | M8×70 (or M8×65) bolt + M8 nut | crank shafts |
 | 80 | M3 heat-set insert (4.0 mm hole, 5.5 deep) | module plates |
 | 76 | M3×10 bolt | links to modules |
 | 4 | M3×12 bolt | S1 base to beam |
-| 6 | M3×8 self-tapping | roll retainers |
-| 14 | M4×35 bolt + nut | crank tension screws |
+| 6 | M3×10 self-tapping | roll retainers |
+| 14 | M4×40 bolt + nut | crank tension screws |
 | 28 | M4×12 bolt + nut | crank feet to racks |
 | 7 | M4×30 bolt + nut | crank knobs |
 | ~20 | 4×30 wood screws | beam and racks to the table |
