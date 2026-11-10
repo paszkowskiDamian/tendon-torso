@@ -6,9 +6,9 @@ Local frame: shaft along X through the origin, Z up, Bowden tubes arrive from ab
   36 index holes: a pin through the crank arm locks the joint every 10 deg of crank.
   The beam underside is a 48 deg roof (only a 7 mm flat strip is bridged) and the
   bearing holes are steep teardrops, so the frame prints foot-down without supports.
-* SPOOL: one solid of revolution, printed standing on its -X boss. Two shallow
-  helical grooves (cord A on -X, cord B on +X) between flanges whose undersides are
-  48 deg cones. Clamped between the two 608 inner races by the M8 shaft bolt.
+* SPOOL: one solid, printed standing on its -X boss. Two helical grooves
+  (cord A on -X, cord B on +X): rounded 90 deg V, 0.5 mm deep (cord half buried),
+  pitch 1.9, ~3.4 turns each, between flanges whose undersides are 48 deg cones. Clamped between the two 608 inner races by the M8 shaft bolt.
 * CRANK ARM: M8 bolt head sits in its hex pocket. Knob turns on an M4 bolt.
 * NUT CUP: holds the M8 nut on the -X side and clamps the stack.
 * SOCKET BLOCK: holds both tube ends right above the spool tangents. Two M4
@@ -21,10 +21,11 @@ from . import params as P
 from .cad import box, cut_all, cyl_x, cyl_z, hex_x, hex_z, polar, rod, yz
 
 R_SPOOL = 8.0                  # cord centre radius on the spool (= effective drum radius)
-PITCH = 1.5
+PITCH = 1.9                    # 1.42 mm groove + 0.48 mm flat land
 SLOPE = 1.1                    # rise per mm of radius on every downward-facing cone (48 deg)
 SPOOL_HALF = 16.5              # bosses touch the inner races here
-CORE_R = R_SPOOL - 0.3         # groove core: the cord centre sits 0.3 mm proud of it (shallow groove)
+CORE_R = R_SPOOL               # groove core: the cord sits half buried (groove 0.5 mm deep)
+GROOVE_BOTTOM = R_SPOOL - P.CORD_D / 2   # rounded 90 deg V: cord radius at the bottom, 45 deg flanks
 FLANGE_R = 10.3
 BOSS_R = 6.0                   # touches only the 608 inner race
 BOSS_L = 0.5
@@ -71,16 +72,17 @@ def _revolve_x(pts):
     return cq.Workplane("XY").polyline(pts).close().revolve(360, (0, 0, 0), (1, 0, 0))
 
 
-def _spool_profile():
+def _spool_profile(r_core=CORE_R):
     """(x, r) outline of the spool, -X end first. Every step that faces -X (= down
-    when printed standing) is a cone with rise SLOPE per mm of radius."""
+    when printed standing) is a cone with rise SLOPE per mm of radius. With r_core <
+    CORE_R the helical sections are left as recesses (filled by the grooved cores)."""
     xa0, xa1 = SEC_A
     xb0, xb1 = SEC_B
     xc = xb1 + _CF + FLAT
     return [
         (-SPOOL_HALF, 0), (-SPOOL_HALF, BOSS_R), (-SPOOL_HALF + BOSS_L, BOSS_R), (xa0 - FLAT, FLANGE_R),
-        (xa0, FLANGE_R), (xa0, CORE_R), (xa1, CORE_R), (xa1 + _CF, FLANGE_R), (xb0, FLANGE_R),
-        (xb0, CORE_R), (xb1, CORE_R), (xb1 + _CF, FLANGE_R), (xc, FLANGE_R),
+        (xa0, FLANGE_R), (xa0, r_core), (xa1, r_core), (xa1, CORE_R), (xa1 + _CF, FLANGE_R), (xb0, FLANGE_R),
+        (xb0, r_core), (xb1, r_core), (xb1, CORE_R), (xb1 + _CF, FLANGE_R), (xc, FLANGE_R),
         (xc + _CT, BOSS_R), (SPOOL_HALF, BOSS_R), (SPOOL_HALF, 0),
     ]
 
@@ -90,18 +92,37 @@ def _helix_angle(t):
     return -90.0 + 360.0 * t
 
 
+def _groove_profile():
+    """Rounded 90 deg V in the (radius, axial) plane of the helix start: a cord-radius
+    arc at the bottom, 45 deg flanks tangent to it up to just past the core surface,
+    then straight out (no overlap between neighbouring turns)."""
+    rc = P.CORD_D / 2
+    t = rc * math.sqrt(0.5)                      # tangent point offsets (45 deg)
+    r_f = CORE_R + 0.05                          # flanks end just outside the core
+    w = t + (r_f - (R_SPOOL - t))                # half width there
+    r_out = CORE_R + 1.0
+    return (cq.Workplane("XZ").moveTo(r_out, -w).lineTo(r_f, -w).lineTo(R_SPOOL - t, -t)
+            .threePointArc((GROOVE_BOTTOM, 0), (R_SPOOL - t, t)).lineTo(r_f, w).lineTo(r_out, w).close())
+
+
 def spool():
-    body = _revolve_x(_spool_profile())
-    cuts = [cyl_x(P.M8_CLR / 2, -SPOOL_HALF - 1, SPOOL_HALF + 1)]
+    # The grooved cores are cut as separate rings (built along Z, like the helix) and
+    # fused in: cutting the helix straight out of the revolved body, or out of a ring
+    # built along X, makes OCC return a broken shell or silently skip the cut.
+    r_rec = BOSS_R - 1.0
+    body = _revolve_x(_spool_profile(r_rec))
     for a, b in (SEC_A, SEC_B):
         h = b - a - 1.0
-        path = cq.Wire.makeHelix(PITCH, h, R_SPOOL)
-        g = (cq.Workplane("XZ").center(R_SPOOL, 0).circle(P.CORD_D / 2 + 0.15)
-             .sweep(cq.Workplane().add(path), isFrenet=True))
-        cuts.append(g.rotate((0, 0, 0), (0, 1, 0), 90).translate((a + 0.5, 0, 0)))
+        path = cq.Wire.makeHelix(PITCH, h, R_SPOOL - 3.0)   # spine inside the core; profile stays at R_SPOOL
+        g = _groove_profile().sweep(cq.Workplane().add(path), isFrenet=True)
+        ring = cyl_z(CORE_R, -0.5, h + 0.5).cut(cyl_z(r_rec - 0.5, -1.5, h + 1.5))
+        core = ring.cut(g)
+        assert ring.val().Volume() - core.val().Volume() > 10, "groove cut failed"
+        body = body.union(core.rotate((0, 0, 0), (0, 1, 0), 90).translate((a + 0.5, 0, 0)))
+    cuts = [cyl_x(P.M8_CLR / 2, -SPOOL_HALF - 1, SPOOL_HALF + 1)]
     # cord anchor holes: axial, through the outer flange at the outer end of each
     # helix; the knot sits on the outer cone, clear of the bearing.
-    ra = CORE_R + 0.9
+    ra = R_SPOOL + 0.55
     turns = (SEC_B[1] - SEC_B[0] - 1.0) / PITCH
     for x0, x1, ang in ((-SPOOL_HALF, SEC_A[0] + 0.5, _helix_angle(0)),
                         (SEC_B[1] - 0.5, SPOOL_HALF, _helix_angle(turns))):
