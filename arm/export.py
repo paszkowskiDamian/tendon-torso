@@ -52,13 +52,13 @@ def parts():
     for name, spec, _ in CHAIN:
         if isinstance(spec, tuple):
             out[name] = (L.link(spec[0], spec[1], link_length(name, spec)), 1,
-                         f"link {spec[0]}->{spec[1]}, {link_length(name, spec):.0f} mm - bottom lip down")
-    out["crank_frame"] = (C.frame(), 7, "crank frame - foot down (bearing holes are teardrops)")
-    out["crank_spool"] = (rotY(C.spool(), -90), 7, "crank spool - standing on end, 0.12-0.16 mm layers")
-    out["crank_socket_block"] = (C.socket_block(), 7, "tube socket / tension block")
+                         f"link {spec[0]}->{spec[1]}, {link_length(name, spec):.0f} mm - bottom lip down, 48 deg cone under the top lip")
+    out["crank_frame"] = (C.frame(), 7, "crank frame - foot down (teardrop bearing holes, 48 deg roof under the beam)")
+    out["crank_spool"] = (rotY(C.spool(), -90), 7, "crank spool - standing on its small -X boss, 0.12 mm layers, brim")
+    out["crank_socket_block"] = (C.socket_block(), 7, "tube socket / tension block - nut traps down")
     out["crank_arm"] = (rotY(C.crank_arm(), 90), 7, "crank arm - flat")
     out["crank_nut_cup"] = (rotY(C.nut_cup(), -90), 7, "M8 nut cup - nut pocket down")
-    out["crank_lock_pin"] = (C.lock_pin(), 7, "lock pin")
+    out["crank_lock_pin"] = (C.lock_pin(), 7, "lock pin - head up")
     out["crank_knob"] = (C.knob(), 7, "crank knob")
     out["torso_shoulder_beam"] = (T.shoulder_beam(S1), 1, "shoulder beam - floor down, 6 walls")
     out["torso_crank_rack"] = (T.crank_rack(3), 3, "crank rack (3 cranks each)")
