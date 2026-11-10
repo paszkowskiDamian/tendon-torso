@@ -30,10 +30,14 @@
 | `link_w1_w2.stl` | 1 | 64 x 64 x 22 | link S->S, 22 mm - bottom lip down, 48 deg cone under the top lip |
 | `crank_frame.stl` | 7 | 51 x 80 x 132 | crank frame - foot down (teardrop bearing holes, 48 deg roof under the beam) |
 | `crank_spool.stl` | 7 | 21 x 21 x 33 | crank spool - standing on its small -X boss, 0.12 mm layers, brim |
-| `crank_socket_block.stl` | 7 | 32 x 26 x 10 | tube socket / tension block - nut traps down |
+| `crank_socket_block_a.stl` | 7 | 32 x 14 x 22 | socket / tension block for cord A (1 M4x45 + nut) - nut trap down |
+| `crank_socket_block_b.stl` | 7 | 32 x 14 x 22 | socket / tension block for cord B (1 M4x45 + nut) - nut trap down |
+| `crank_tube_clip.stl` | 7 | 21 x 26 x 18 | tube clip on the crank top, under both tension screw heads - plate down |
 | `crank_arm.stl` | 7 | 82 x 26 x 11 | crank arm - flat |
 | `crank_nut_cup.stl` | 7 | 24 x 24 x 13 | M8 nut cup - nut pocket down |
 | `crank_lock_pin.stl` | 7 | 12 x 12 x 18 | lock pin - head up |
 | `crank_knob.stl` | 7 | 14 x 14 x 26 | crank knob |
 | `torso_shoulder_beam.stl` | 1 | 100 x 240 x 52 | shoulder beam - floor down, 6 walls |
 | `torso_crank_rack.stl` | 3 | 216 x 96 x 5 | crank rack (3 cranks each) |
+| `torso_tube_comb.stl` | 2 | 92 x 40 x 19 | labelled tube comb, snaps into the beam windows at y=33 and y=60 - plate down, labels up |
+| `fitting_cord_thimble.stl` | 4 | 15 x 24 x 5 | cord thimble (cord to spring hook / eye) - flat |

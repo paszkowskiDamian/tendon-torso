@@ -11,8 +11,19 @@ Local frame: shaft along X through the origin, Z up, Bowden tubes arrive from ab
   pitch 1.9, ~3.4 turns each, between flanges whose undersides are 48 deg cones. Clamped between the two 608 inner races by the M8 shaft bolt.
 * CRANK ARM: M8 bolt head sits in its hex pocket. Knob turns on an M4 bolt.
 * NUT CUP: holds the M8 nut on the -X side and clamps the stack.
-* SOCKET BLOCK: holds both tube ends right above the spool tangents. Two M4
-  screws through the top beam pull it up = tension both cords (~9 mm of travel).
+* SOCKET BLOCKS A and B: one per cord, so each cord's length / pretension is set
+  on its own. The space between the walls is split at y=0: block A (y>0) holds the
+  tube of cord A right above its helix tangent, block B (y<0) that of cord B. Each
+  block is pulled up by ONE M4 screw through the beam into a captive nut, 10 mm of
+  travel. Guiding: the block fills the gap between the two walls (0.3 mm each side),
+  so it cannot turn about Z or tilt sideways; its screw sits at the SAME y as its
+  cord, so cord tension makes no moment about X; the remaining moment about Y
+  (screw 9 mm beside the cord, in X) is taken by the walls. The screw is within
+  4 mm of the block centre, so the drawer effect cannot self-lock (that would need
+  an offset > h / (2 mu) ~ 10 mm). The block top follows the roof (48 deg), so the
+  blocks are tall in the middle where the nuts are.
+* TUBE CLIP: sits on the beam top under both tension screw heads (they hold it) and
+  guides both tubes vertically out of the beam for 15 mm.
 """
 import math
 import cadquery as cq
@@ -44,11 +55,18 @@ WALL_OUT = WALL_IN + WALL_T
 FOOT_Z = (-78.0, -72.0)          # shaft high enough for the crank to clear the table
 BEAM_Z = (48.0, 54.0)          # beam top plate; the roof below it starts at the walls
 ROOF_FLAT = 3.5                # half width of the bridged strip at the top of the roof
-BLOCK_Z = (17.0, 27.0)
-BLOCK_CHAMFER = 2.0
-TENSION_X = 10.5               # M4 tension screws
 SOCK_X = (SEC_A[0] + SEC_A[1]) / 2   # cord A socket (centre of its helix)
 SOCK_B = (SEC_B[0] + SEC_B[1]) / 2   # cord B socket
+BLOCK_TRAVEL = 10.0            # tension travel of each socket block
+BLOCK_GAP = 0.5                # block top -> roof underside at the top of the travel
+BLOCK_SIDE = 0.3               # clearance to each wall and between the two blocks
+BLOCK_Y = 14.0                 # outer y end of the blocks (= roof edge)
+BLOCK_Z = (16.0, 48.0 - BLOCK_GAP - BLOCK_TRAVEL)   # bottom (lowest position), top at the centre
+TENSION_DX = 9.0               # tension screw beside its socket, towards the centre (x)
+TENSION = ((SOCK_X + TENSION_DX, R_SPOOL), (SOCK_B - TENSION_DX, -R_SPOOL))   # (x, y) screw A, screw B
+CLIP_T = 3.0                   # tube clip plate on the beam top (under the screw heads)
+CLIP_SLEEVE_H = 15.0
+CLIP_BORE_R = P.TUBE_OD / 2 + 0.3    # tubes slide freely
 INDEX_R, INDEX_N = 32.0, 36
 INDEX_DEPTH = 6.0
 ARM_R = 62.0
@@ -167,9 +185,9 @@ def frame():
         if z + 2.5 > max(zw, BEAM_Z[1]) or z - 2.5 < FOOT_Z[1]:
             continue
         cuts.append(cyl_x(2.2, WALL_OUT - INDEX_DEPTH, WALL_OUT + 1).translate((0, y, z)))
-    # tension screws through the roof + beam
-    for x in (-TENSION_X, TENSION_X):
-        cuts.append(cyl_z(P.M4_CLR / 2, roof_z(x) - 5, BEAM_Z[1] + 1).translate((x, 0, 0)))
+    # tension screws through the roof + beam (one per socket block)
+    for x, y in TENSION:
+        cuts.append(cyl_z(P.M4_CLR / 2, roof_z(x) - 5, BEAM_Z[1] + 1).translate((x, y, 0)))
     # tube pass holes in the beam (tubes go through to the block)
     for x, y in ((SOCK_X, R_SPOOL), (SOCK_B, -R_SPOOL)):
         cuts.append(cyl_z(P.TUBE_OD / 2 + 1.0, roof_z(x) - 5, BEAM_Z[1] + 1).translate((x, y, 0)))
@@ -187,17 +205,71 @@ def frame():
     return cut_all(body, cuts)
 
 
-def socket_block():
-    x0, x1 = -WALL_IN + 0.3, WALL_IN - 0.3
-    body = box(x0, x1, -13, 13, *BLOCK_Z).edges("|Y and >Z").chamfer(BLOCK_CHAMFER)
+def _block_outline(lift=0.0):
+    """XZ outline of a socket block (both have the same): flat bottom, sides along the
+    walls, top parallel to the roof (BLOCK_GAP + BLOCK_TRAVEL below it)."""
+    x1 = WALL_IN - BLOCK_SIDE
+    top = lambda x: roof_z(x) - BLOCK_GAP - BLOCK_TRAVEL + lift
+    z0 = BLOCK_Z[0] + lift
+    return [(-x1, z0), (x1, z0), (x1, top(x1)), (ROOF_FLAT, top(ROOF_FLAT)),
+            (-ROOF_FLAT, top(ROOF_FLAT)), (-x1, top(x1))]
+
+
+def socket_block_ab(which, lift=0.0):
+    """Socket block for cord 'A' (y > 0) or 'B' (y < 0), at height lift above its
+    lowest position. Prints bottom down (nut trap open to the bed)."""
+    sock, (tx, ty) = ((SOCK_X, R_SPOOL), TENSION[0]) if which == "A" else ((SOCK_B, -R_SPOOL), TENSION[1])
+    ya, yb = (BLOCK_SIDE, BLOCK_Y) if which == "A" else (-BLOCK_Y, -BLOCK_SIDE)
+    body = cq.Workplane("XZ").polyline(_block_outline(lift)).close().extrude(-(yb - ya)).translate((0, ya, 0))
+    z0 = BLOCK_Z[0] + lift
+    top = lambda x: roof_z(x) - BLOCK_GAP - BLOCK_TRAVEL + lift
+    sx, sy = sock
+    r_tube, r_scr = P.TUBE_OD / 2 + 0.15, P.M4_CLR / 2 - 0.3
+    # flat spot faces round the holes in the sloped top (no knife edges at the rims)
+    zt = top(abs(sx) + r_tube + 1.2)
+    zs = top(abs(tx) + r_scr + 1.2)
+    cuts = [cyl_z(r_tube + 1.2, zt, 60).translate((sx, sy, 0)),
+            cyl_z(r_scr + 1.2, zs, 60).translate((tx, ty, 0)),
+            cyl_z(r_tube, zt - 7, zt + 1).translate((sx, sy, 0)),                   # tube socket, 7 deep
+            cyl_z(P.TUBE_ID / 2 + 0.2, z0 - 1, zt).translate((sx, sy, 0)),          # cord
+            cyl_z(r_scr, z0 - 1, 60).translate((tx, ty, 0)),                        # tension screw (thread clearance)
+            # captive nut from below, flats facing +-y (>= 2.3 mm walls all round)
+            hex_z(z0 - 1, z0 + P.M4_NUT_T + 0.3, tx, ty, P.M4_NUT_AF + 0.2)]
+    return cut_all(body, cuts)
+
+
+def socket_block_a(lift=0.0):
+    return socket_block_ab("A", lift)
+
+
+def socket_block_b(lift=0.0):
+    return socket_block_ab("B", lift)
+
+
+def socket_block(lift=0.0):
+    """Both blocks together, in place (for the assembly / viewer)."""
+    return socket_block_a(lift).add(socket_block_b(lift)).combine(clean=False)
+
+
+def tube_clip():
+    """Plate on the beam top, held by both tension-screw heads (it is their washer),
+    with a sleeve over each tube hole that keeps the tube vertical for 15 mm before
+    it bends away (free bend, R >= 25 mm). Prints plate down."""
+    z0, z1 = BEAM_Z[1], BEAM_Z[1] + CLIP_T
+    pts = [(SOCK_X, R_SPOOL), (SOCK_B, -R_SPOOL)]
+    xs = [p[0] for p in pts + list(TENSION)]
+    body = box(min(xs) - 5.0, max(xs) + 5.0, -R_SPOOL - 5.0, R_SPOOL + 5.0, z0, z1).edges("|Z").fillet(3.0)
+    sleeve_r = CLIP_BORE_R + 1.8
+    for x, y in pts:
+        body = body.union(cyl_z(sleeve_r, z1 - 0.1, z1 + CLIP_SLEEVE_H).translate((x, y, 0)))
     cuts = []
-    for x, y in ((SOCK_X, R_SPOOL), (SOCK_B, -R_SPOOL)):
-        cuts.append(cyl_z(P.TUBE_OD / 2 + 0.15, BLOCK_Z[1] - 7, BLOCK_Z[1] + 1).translate((x, y, 0)))
-        cuts.append(cyl_z(P.TUBE_ID / 2 + 0.2, BLOCK_Z[0] - 1, BLOCK_Z[1]).translate((x, y, 0)))
-    for x in (-TENSION_X, TENSION_X):
-        cuts.append(cyl_z(P.M4_CLR / 2 - 0.3, BLOCK_Z[0] - 1, BLOCK_Z[1] + 1).translate((x, 0, 0)))
-        # nut trap from below, flats facing the block ends (>= 2 mm wall)
-        cuts.append(hex_z(BLOCK_Z[0] - 1, BLOCK_Z[0] + P.M4_NUT_T + 0.3, x, 0, P.M4_NUT_AF + 0.2, rot=30))
+    for x, y in pts:
+        cuts.append(cyl_z(CLIP_BORE_R, z0 - 1, z1 + CLIP_SLEEVE_H + 1).translate((x, y, 0)))
+        # entry flare at the top (45 deg cone, faces up when printed)
+        cuts.append(cq.Workplane("XY").workplane(offset=z1 + CLIP_SLEEVE_H - 0.5).center(x, y)
+                    .circle(CLIP_BORE_R).workplane(offset=0.51).circle(CLIP_BORE_R + 0.51).loft())
+    for x, y in TENSION:
+        cuts.append(cyl_z(P.M4_CLR / 2, z0 - 1, z1 + 1).translate((x, y, 0)))
     return cut_all(body, cuts)
 
 
