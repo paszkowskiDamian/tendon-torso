@@ -57,14 +57,17 @@ crank ×7 ──PTFE tubes──► shoulder beam ──► S1 ─ S2 ─ link �
 * **Crank module** (`crank.py`):
   * an M8 shaft on two 608s, with a helical spool clamped between them;
   * a crank arm with a **lock pin** that indexes every 10° on a ring of holes;
-  * a **socket block** that two M4 screws pull up to tension both cords at once.
+  * two **socket blocks** (A and B), one per cord, each pulled up by its own M4 screw (10 mm travel), so each cord's length and pretension is set on its own;
+  * a **tube clip** on top, held by the two tension screw heads, that guides both tubes out vertically.
 * **Torso** (`torso.py`):
   * a U-channel shoulder beam that screws onto the table and overhangs its edge, with S1 bolted underneath;
-  * crank racks for 3 cranks each.
+  * crank racks for 3 cranks each;
+  * two snap-in **tube combs** that hold the 14 tubes in a labelled grid (S1 … W2 × A/B) inside the channel.
+* **Fittings** (`fittings.py`): a cord thimble to join Dyneema to a spring hook or an eye.
 
 ## Printability (`tools/printability.py`)
 
-**All 37 parts print without supports** in the orientation they are exported in. The check:
+**All 41 parts print without supports** in the orientation they are exported in. The check:
 * no overhang steeper than 45°;
 * no flat bridge wider than about 8 mm;
 * no wall under 1.2 mm;
@@ -130,7 +133,7 @@ Notable orientations:
 | 76 | M3×10 bolt | links to modules |
 | 4 | M3×12 bolt | S1 base to beam |
 | 6 | M3×10 self-tapping | roll retainers |
-| 14 | M4×40 bolt + nut | crank tension screws |
+| 14 | M4×45 bolt + nut | crank tension screws (one per socket block) |
 | 28 | M4×12 bolt + nut | crank feet to racks |
 | 7 | M4×30 bolt + nut | crank knobs |
 | ~20 | 4×30 wood screws | beam and racks to the table |
@@ -154,12 +157,12 @@ Notable orientations:
    2. Each time you add the next module or link above, feed **all** tubes that already exist through its center.
    3. Bolt each link with M3×10 through its lips into the inserts.
    4. Mark every tube at both ends with its joint and cord (A/B), for example with colored tape.
-5. **Mount the shoulder beam** on the table edge (wood screws) and bolt the S1 base underneath it. Lead all 14 tubes along the channel to the cranks.
+5. **Mount the shoulder beam** on the table edge (wood screws) and bolt the S1 base underneath it. Thread all 14 tubes through the two tube combs (each tube in its labelled hole), snap the combs into the side windows at y = 33 and y = 60, and lead the tubes along the channel to the cranks. Keep every free bend at R ≥ 25 mm.
 6. **Fit each crank.**
-   1. Push its two tubes into the socket block.
+   1. Feed its two tubes down through the tube clip and the beam and push them into the socket blocks (A on the +y block, B on the −y block). Put an M4 nut in each block's nut trap and screw an M4×45 through the clip and the beam into it.
    2. Put the joint at 0° and the crank lock pin in hole 0.
    3. Wind each cord **about 2 turns** onto the spool: cord A on the −X helix, cord B on the +X helix, both going *under* the spool. Pass the cord through the flange hole and knot it.
-7. **Tension:** turn the two M4 screws on top of each crank to lift the socket block until the joint has no play. Re-tension after the first hours, because Dyneema and PETG both settle a little.
+7. **Tension:** turn each crank's two M4 screws (one per cord) to lift its socket block until the joint has no play; use them separately to trim the joint's zero position. Re-tension after the first hours, because Dyneema and PETG both settle a little.
 
 Tip: pre-stretch the Dyneema by hanging 5 kg on it overnight before cutting it to length.
 
