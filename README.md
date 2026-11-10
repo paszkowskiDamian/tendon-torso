@@ -30,6 +30,7 @@ joints/j1s-hinge/     J1-S (stepper, 6:1, Bowden center)
 joints/j1b-2dof/      J1b: J1-S + J2 wrist module + Bowden drive module
 joints/common/        shared CAD helpers
 arm/                  the full 7-DOF arm: modules, links, cranks, torso, STLs, build guide
+arm/kinematics.py     forward + inverse kinematics (python -m arm.ik X Y Z), see docs/kinematics.md
 tools/                preview renders + collision / clearance checks
 ```
 

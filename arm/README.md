@@ -18,6 +18,16 @@ Interactive 3D model: open `docs/viewer/` (tab *Arm · 7 DOF*), see the repo [RE
 
 Upper arm is 300 mm (S2 axis to elbow), forearm 250 mm (elbow to wrist). The arm hangs about 0.9 m below the shoulder beam, so mount the beam on a high table, shelf or bench edge.
 
+## Controlling the hand (kinematics)
+
+Give a hand position (and optionally an orientation) and get the 7 joint angles plus the turns for each crank:
+
+```bash
+.venv/bin/python -m arm.ik -40 164 -695
+```
+
+The equations, solver and accuracy are in [docs/kinematics.md](../docs/kinematics.md). The viewer's **Reach mode** runs the same solver live in the browser.
+
 ## How it's built
 
 ```

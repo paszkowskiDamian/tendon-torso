@@ -98,6 +98,9 @@ def export_arm():
         "crank": {"r": C.R_SPOOL, "sock_x": C.SOCK_X, "sock_b": C.SOCK_B, "block_z": C.BLOCK_Z[0], "beam_z": C.BEAM_Z[1]},
         "beam": {"y0": T.BEAM_Y[0], "y1": T.BEAM_Y[1], "h": T.BEAM_H, "s1_y": T.S1_Y},
     }
+    from arm import kinematics as KN
+    meta["shoulder"] = KN.shoulder_frame().tolist()
+    meta["tool"] = KN.TOOL_OFFSET
     with open(OUT / "arm_chain.json", "w") as f:
         json.dump(meta, f, separators=(",", ":"))
     print("arm_chain.json written")
