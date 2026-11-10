@@ -35,9 +35,15 @@ def shoulder_beam(s1):
         for yy in (25.0, 95.0):
             cuts.append(cyl_z(2.4, -1, WALL + 1).translate((xx, yy, 0)))
             cuts.append(cyl_z(4.5, WALL - 2.5, WALL + 1).translate((xx, yy, 0)))
-    # lighten the side walls
-    for sx in (-1, 1):
-        cuts.append(box(sx * x - WALL, sx * x + WALL, 25, 95, 16, BEAM_H - 10))
+    # lighten the side walls: three windows each, 48 deg pointed tops (6 mm bridge)
+    z0, z1 = 16.0, BEAM_H - 10
+    for yc in (33.0, 60.0, 87.0):
+        hw, flat = 10.0, 3.0
+        zs = z1 - (hw - flat) * 1.1
+        win = (cq.Workplane("YZ").workplane(offset=-x - 1)
+               .polyline([(yc - hw, z0), (yc + hw, z0), (yc + hw, zs), (yc + flat, z1),
+                          (yc - flat, z1), (yc - hw, zs)]).close().extrude(2 * x + 2))
+        cuts.append(win)
     return cut_all(body, cuts)
 
 
