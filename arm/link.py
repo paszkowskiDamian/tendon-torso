@@ -94,3 +94,39 @@ def link(cls_a, cls_b, length, wall=3.0):
             x, y = polar(spec["bc"], ang)
             body = body.cut(cyl_z(P.M3_CLR / 2, z0, z1).translate((x, y, 0)))
     return body
+
+
+def yoke_link(cls_a, cls_b, length, x_s, z_pin, top_tip=12.0, half_w=10.0, cheek=5.5, slot=3.0):
+    """Spacer link + two gravity-balance yoke arms (see balance.py).
+
+    Same flanges and length as link() (the kinematics do not change). Each arm is
+    a flat bar along +-X on the bed (z = 0, the S1 side), y in +-half_w (clear of
+    the radial bolt-head slots at +-22.5 deg), full height next to the lips and
+    sloping down to top_tip at the tip (clear of the S2 rotor / upper arm swinging
+    out at full abduction). The tip is a fork: a `slot`-wide cord slot in the plane
+    x = +-x_s, open towards -Z and +-Y (the cord leaves towards the pulley over the
+    whole flexion range), bridged above the pin; an M3 pin along X at z_pin carries
+    the cord loop (a loop pivots on the pin, so the cord line always passes through
+    the pin centre = point B).
+    """
+    body = link(cls_a, cls_b, length)
+    A = P.FLANGES[cls_a]
+    x0 = A["tube_r"] - 2.0                     # inside the tube wall, outside the bore
+    x_flat = A["od"]                           # full height out to the lip radius
+    x_tip = x_s + slot / 2 + cheek
+    for sx in (1, -1):
+        prof = [(x0, 0), (x_tip, 0), (x_tip, top_tip), (x_s + slot / 2 + 1.0, top_tip),
+                (x_flat, length), (x0, length)]
+        arm = (cq.Workplane("XZ").polyline([(sx * x, z) for x, z in prof]).close()
+               .extrude(half_w).translate((0, half_w, 0)).union(
+               cq.Workplane("XZ").polyline([(sx * x, z) for x, z in prof]).close()
+               .extrude(-half_w).translate((0, -half_w, 0))))
+        arm = arm.cut(box(-1, 1, -half_w - 1, half_w + 1, -1, z_pin + 3.5)
+                      .translate((sx * x_s, 0, 0)).union(
+                      box(-slot / 2, slot / 2, -half_w - 1, half_w + 1, -1, z_pin + 3.5)
+                      .translate((sx * x_s, 0, 0))))
+        pin = cq.Workplane("YZ").workplane(offset=x_s - slot / 2 - cheek - 1).circle(1.6).extrude(2 * cheek + slot + 2)
+        if sx < 0:
+            pin = pin.mirror("YZ")
+        body = body.union(arm.cut(pin.translate((0, 0, z_pin))))
+    return body

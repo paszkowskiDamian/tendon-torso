@@ -95,6 +95,14 @@ WORLD = Tm(0, T.S1_Y, 0) @ Ry(180)       # frame on the underside of the beam fl
 
 # ------------------------------------------------------------ parts per element
 _cache = {}
+BALANCE_YOKE_ON = "link_s1_s2"     # this spacer carries the gravity-balance yoke (balance.py)
+
+
+def balance_yoke_link():
+    """link_s1_s2 with the two balance yoke arms (same flanges/length as the plain spacer)."""
+    from . import balance as BAL
+    ca, cb, ln = dict((n, s) for n, s, _ in CHAIN)[BALANCE_YOKE_ON]
+    return L.yoke_link(ca, cb, ln, BAL.X_S, BAL.B_Z, top_tip=BAL.YOKE_TIP_H)
 
 
 def element_parts(name, spec):
@@ -114,6 +122,8 @@ def element_parts(name, spec):
             st[f"{key}_idler_{tag}"] = (tyre.translate((0, 0, -R.TYRE_W / 2)).rotate((0, 0, 0), (0, 1, 0), 90)
                                         .translate((x, yi, zg - R.IDLER_CORD_R)))
         out = (st, {f"{key}_rotor": R.rotor(spec)})
+    elif name == BALANCE_YOKE_ON:
+        out = ({key: balance_yoke_link()}, {})
     else:
         ca, cb, _ = spec
         out = ({key: L.link(ca, cb, link_length(name, spec))}, {})
@@ -162,7 +172,8 @@ def arm_solids(q=None, only=None):
 
 # ------------------------------------------------------------ torso + cranks
 CRANK_ORDER = ["S1", "S2", "S3", "E", "F", "W1", "W2"]
-RACK_CENTRES = [(175.0, 40.0), (175.0, 150.0), (175.0, 260.0)]
+# racks start at x = 112: the +X balance spring, its cord and anchor post run along x = 85 (balance.py)
+RACK_CENTRES = [(220.0, 40.0), (220.0, 150.0), (220.0, 260.0)]
 SHAFT_Z = 5.0 - C.FOOT_Z[0]          # rack thickness + foot depth below the shaft
 
 
@@ -189,3 +200,24 @@ def joint_spec(j):
 def crank_ratio(j):
     """Crank turns per joint turn (= drum radius / spool radius)."""
     return joint_spec(j).R / C.R_SPOOL
+
+
+# ------------------------------------------------------------ gravity balance
+def balance_parts(q=None, cords=True):
+    """{part_name: workplane in world} of the shoulder balance for joint angles q:
+    masts, sheaves, anchor posts, springs and cords (the yoke is link_s1_s2)."""
+    from . import balance as BAL
+    return BAL.posed_parts(q, cords=cords)
+
+
+def rack_solids():
+    """{name: workplane in world} of the crank racks + all crank modules (arm at 0)."""
+    out = {}
+    rack = T.crank_rack(3)
+    for i, (cx, cy) in enumerate(RACK_CENTRES):
+        out[f"rack{i}"] = rack.translate((cx, cy, 0))
+    parts = crank_parts()
+    for j, m in crank_frames().items():
+        for k, w in parts.items():
+            out[f"{j}_{k}"] = place(w, m)
+    return out
