@@ -41,8 +41,8 @@ def parts():
         k = s.name.lower()
         a, b = H.rotor_pair(s)
         out[f"{k}_base"] = (H.base(s), 1, f"{s.name} hinge base - plate down")
-        out[f"{k}_rotor_a"] = (rotY(a, 90), 1, f"{s.name} rotor half A - split face down")
-        out[f"{k}_rotor_b"] = (rotY(b, -90), 1, f"{s.name} rotor half B - split face down")
+        out[f"{k}_rotor_a"] = (rotX(a, 180), 1, f"{s.name} rotor half A - top plate down")
+        out[f"{k}_rotor_b"] = (rotX(b, 180), 1, f"{s.name} rotor half B - top plate down")
     for s in (S3, F):
         k = s.name.lower()
         out[f"{k}_stator"] = (R.stator(s), 1, f"{s.name} roll stator - plate down")
