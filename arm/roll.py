@@ -10,8 +10,18 @@ axis at the top face of the stator plate.
 * ROTOR: a ring around the bearings (outer races) with two tendon grooves and
   knotted chord anchors, plus a top plate with inserts for the next link.
   Print it upside down (plate on the bed).
-* RETAINER: ring screwed onto the top of the stator tube; clamps the upper
-  inner race so the bearing pair is preloaded against the rotor's drum zone.
+* RETAINER: ring screwed onto the top of the stator tube (3x M3x10 into 2.5 mm
+  pilots); the tube stops CLAMP_GAP below the upper inner race, so the retainer
+  presses the race (not the tube) and preloads the pair through the rotor.
+
+Print / support-free notes (all parts):
+* stator prints plate down; idler cheeks are buttressed at 45 deg, the idler bolt
+  (M3x12) goes in from the outer cheek and self-taps into the inner cheek (no nut
+  next to the drum), small bosses space the 623 inner race off the cheeks.
+* rotor prints upside down (top plate on the bed): the upper-pocket ceiling is a
+  narrow seat (outer race only) + a 45 deg cone, the groove ceilings are 45 deg
+  chamfers, knot pockets are teardrops; the lower pocket ceiling is relieved over
+  the inner race so the rotor only touches the outer races.
 
 Cord A: groove at z_a, tangent at angle 0 (x=+R), arrives along -Y, wraps clockwise.
 Cord B: groove at z_b, tangent at angle 180 (x=-R), arrives along -Y, wraps counter-clockwise.
@@ -28,6 +38,12 @@ from .cad import box, cut_all, cyl_x, cyl_z, hex_x, polar, rod
 
 TYRE_R, TYRE_W = 8.0, 5.0              # printed idler tyre on a 623
 IDLER_CORD_R = TYRE_R - 1.0 + P.CORD_D / 2   # cord centre radius on the idler (groove 1 mm deep)
+BORE_WALL = 6.5            # stator tube wall (r_in .. r_t): room for the retainer screws
+CLAMP_GAP = 0.4            # stator tube top below the upper inner race top
+SEAT_W = 1.6               # rotor seat width on each outer race
+RET_HOLE = 3.3             # retainer screw clearance (M3)
+CHEEK_X0, CHEEK_X1 = 3.2, 6.2   # idler cheek faces from the idler centre (x)
+CHEEK_HY = 4.5             # idler cheek half depth (y)
 
 
 @dataclass
@@ -58,7 +74,15 @@ class RollSpec:
 
     @property
     def r_in(self):     # free bore for passing tubes
-        return self.r_t - 5.0
+        return self.r_t - BORE_WALL
+
+    @property
+    def r_screw(self):  # retainer screw circle (middle of the tube wall)
+        return self.r_in + BORE_WALL / 2
+
+    @property
+    def r_seat(self):   # inner edge of the rotor's seats (outer race only)
+        return self.bearing[1] / 2 - SEAT_W
 
     @property
     def z_a(self):
@@ -106,24 +130,37 @@ def stator(s: RollSpec):
     sx, sy = s.socket_xy()
     r_plate = max(F["od"], math.hypot(sx, sy) + 5)
     yi = s.idler_y()
+    z_top = s.z_flange - CLAMP_GAP
     body = cyl_z(r_plate, s.in_z, 0)
-    body = body.union(cyl_z(s.r_t, 0, s.z_flange))
-    body = body.union(cyl_z(s.r_t + 2.5, -0.5, 1.0))           # shoulder under the lower inner race
+    body = body.union(cyl_z(s.r_t, 0, z_top))
+    body = body.union(cyl_z(s.r_t + 1.5, -0.5, 1.0))           # shoulder under the lower inner race (not its seal)
     cuts = [cyl_z(s.r_in, s.in_z - 1, s.z_flange + 1)]
     for x, zg in ((s.R, s.z_a), (-s.R, s.z_b)):
         zc = zg - IDLER_CORD_R
+        inward = -1 if x > 0 else 1                             # towards the roll axis
+        h = zc - 3.0                                            # buttress height
         for side in (-1, 1):
-            c0, c1 = sorted((x + side * 3.2, x + side * 6.2))
-            body = body.union(box(c0, c1, yi - 4.5, yi + 4.5, -0.5, zc + 5.0))
-        cuts.append(rod((x - 7, yi, zc), (x + 7, yi, zc), P.M3_CLR))
+            c0, c1 = sorted((x + side * CHEEK_X0, x + side * CHEEK_X1))
+            body = body.union(box(c0, c1, yi - CHEEK_HY, yi + CHEEK_HY, -0.5, zc + 5.0))
+            # 45 deg buttress on the far side (away from the drum, clear of the cord leg)
+            y0 = yi + CHEEK_HY
+            web = (cq.Workplane("YZ").workplane(offset=c0)
+                   .polyline([(y0 - 1, -0.5), (y0 + h, -0.5), (y0, h), (y0 - 1, h)]).close().extrude(c1 - c0))
+            body = body.union(web)
+            # spacer boss on the inside face: touches only the 623 inner race
+            xf = x + side * CHEEK_X0
+            body = body.union(rod((xf, yi, zc), (xf - side * 1.15, yi, zc), 4.6))
+            # bolt: clearance in the outer cheek, self-tapping pilot in the inner one
+            d = P.M3_CLR if side != inward else 2.5
+            cuts.append(rod((c0 - 1, yi, zc), (c1 + 1, yi, zc), d))
+        cuts.append(rod((x - 2.0, yi, zc), (x + 2.0, yi, zc), P.M3_CLR))
         # Bowden socket: tube from below, cord exits up to the idler
         cuts.append(cyl_z(P.TUBE_OD / 2 + 0.15, s.in_z - 1, -2.0).translate((x, sy, 0)))
         cuts.append(cyl_z(P.TUBE_ID / 2 + 0.2, -2.5, 1.0).translate((x, sy, 0)))
     # retainer screw pilots (self-tapping M3) in the top of the tube
-    r_s = (s.r_in + s.r_t) / 2
     for a in (90, 210, 330):
-        x, y = polar(r_s, a)
-        cuts.append(cyl_z(1.3, s.z_flange - 10, s.z_flange + 1).translate((x, y, 0)))
+        x, y = polar(s.r_screw, a)
+        cuts.append(cyl_z(1.25, z_top - 10, z_top + 1).translate((x, y, 0)))
     # inserts underneath for the link below
     for a in P.bolt_angles(F["n"]):
         x, y = polar(F["bc"], a)
@@ -131,25 +168,57 @@ def stator(s: RollSpec):
     return cut_all(body, cuts)
 
 
+def ring_cut(pts):
+    """Solid of revolution about Z from an (r, z) polygon."""
+    return cq.Workplane("XZ").polyline(pts).close().revolve(360, (0, 0, 0), (0, 1, 0))
+
+
+def teardrop(p0, p1, d, up=(0, 0, -1)):
+    """Horizontal hole of diameter d from p0 to p1 with a 45 deg roof towards `up`
+    (the print's +Z; the rotor prints upside down, so assembled -Z)."""
+    v = cq.Vector(*p1) - cq.Vector(*p0)
+    u = cq.Vector(*up)
+    u = (u - v.normalized() * u.dot(v.normalized())).normalized()
+    pl = cq.Plane(origin=p0, xDir=u, normal=v)
+    r = d / 2
+    k = r / math.sqrt(2)
+    tip = cq.Workplane(pl).polyline([(0, 0), (k, k), (r * math.sqrt(2), 0), (k, -k)]).close().extrude(v.Length)
+    return cq.Workplane(pl).circle(r).extrude(v.Length).union(tip)
+
+
 def rotor(s: RollSpec):
+    """Printed upside down (top plate on the bed): every ceiling in that
+    orientation is either a narrow ledge or a 45 deg slope."""
     d, D, B = s.bearing
     F = P.FLANGES[s.rotor_cls]
+    rp = D / 2 + P.FIT                  # bearing pocket radius
+    rc = s.r_t + 0.6                    # clearance around the stator tube
+    zl = 1.0 + B                        # lower pocket ceiling (seat on the lower outer race)
     body = cyl_z(s.r_o, 1.0, s.z_flange).union(cyl_z(F["od"], s.z_flange, s.out_z))
+    zt = s.z_top_pocket
     cuts = [
-        cyl_z(D / 2 + P.FIT, 0, 1.0 + B),                        # lower bearing pocket (opens down)
-        cyl_z(s.r_t + 0.6, 0, s.out_z + 1),                      # clearance around the stator tube
-        cyl_z(D / 2 + P.FIT, s.z_top_pocket, s.out_z + 1),       # upper pocket (opens up through the plate)
+        cyl_z(rp, 0, zl),                                       # lower bearing pocket (opens down)
+        cyl_z(s.r_seat, zl - 0.1, zl + 0.5),                    # relief: no contact with the lower inner race
+        cyl_z(rc, 0, s.out_z + 1),                              # clearance around the stator tube
+        cyl_z(rp, zt, s.out_z + 1),                             # upper pocket (opens up through the plate)
+        # upper seat = outer race only; below it a short wall and a cone (~50 deg from
+        # horizontal) down to the tube clearance, so the print ceiling is a 1.75 mm ledge
+        ring_cut([(0, zt + 0.01), (s.r_seat, zt + 0.01), (s.r_seat, zt - 0.6),
+                  (rc, zt - 0.6 - 1.2 * (s.r_seat - rc)), (0, zt - 0.6 - 1.2 * (s.r_seat - rc))]),
     ]
     w = 2.4
     wa, wb = s.wraps()
     for zg, ang, sign, wrap in ((s.z_a, 0.0, -1, wa), (s.z_b, 180.0, +1, wb)):
-        cuts.append(cyl_z(s.r_o + 2, zg - w / 2, zg + w / 2).cut(cyl_z(s.r_groove, zg - w / 2, zg + w / 2)))
+        # groove: flat bottom + 1 mm flat lip, then the (print-)ceiling side opens at 45 deg
+        r1, r2 = s.r_groove + 1.0, s.r_o + 1.0
+        cuts.append(ring_cut([(s.r_groove, zg + w / 2), (s.r_groove, zg - w / 2), (r1, zg - w / 2),
+                              (r2, zg - w / 2 - (r2 - r1)), (r2, zg + w / 2)]))
         anchor = ang + sign * wrap
         x0, y0 = polar(s.r_groove + 0.3, anchor)
         x1, y1 = polar(s.r_o + 1.0, anchor + sign * 65)
-        cuts.append(rod((x0, y0, zg), (x1, y1, zg), P.CORD_D + 1.0))
+        cuts.append(teardrop((x0, y0, zg), (x1, y1, zg), P.CORD_D + 1.0))
         dv = cq.Vector(x1 - x0, y1 - y0, 0).normalized()
-        cuts.append(rod((x1 - dv.x * 3.5, y1 - dv.y * 3.5, zg), (x1 + dv.x * 2, y1 + dv.y * 2, zg), 4.5))
+        cuts.append(teardrop((x1 - dv.x * 3.5, y1 - dv.y * 3.5, zg), (x1 + dv.x * 2, y1 + dv.y * 2, zg), 4.5))
     for a in P.bolt_angles(F["n"]):
         x, y = polar(F["bc"], a)
         cuts.append(cyl_z(P.INSERT_D / 2, s.out_z - P.INSERT_DEPTH, s.out_z + 1).translate((x, y, 0)))
@@ -158,12 +227,11 @@ def rotor(s: RollSpec):
 
 def retainer(s: RollSpec):
     d = s.bearing[0]
-    r_out = d / 2 + 1.5
+    r_out = d / 2 + 1.2             # covers the inner race only (stays off the 2RS seal)
     body = cyl_z(r_out, 0, 3.0).cut(cyl_z(s.r_in, -1, 4))
-    r_s = (s.r_in + s.r_t) / 2
     for a in (90, 210, 330):
-        x, y = polar(r_s, a)
-        body = body.cut(cyl_z(P.M3_CLR / 2, -1, 4).translate((x, y, 0)))
+        x, y = polar(s.r_screw, a)
+        body = body.cut(cyl_z(RET_HOLE / 2, -1, 4).translate((x, y, 0)))
     return body
 
 

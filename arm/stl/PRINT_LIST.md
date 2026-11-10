@@ -17,10 +17,10 @@
 | `w2_rotor_b.stl` | 1 | 63 x 64 x 32 | W2 rotor half B - split face down |
 | `s3_stator.stl` | 1 | 126 x 126 x 43 | S3 roll stator - plate down |
 | `s3_rotor.stl` | 1 | 86 x 86 x 42 | S3 roll rotor - top plate down |
-| `s3_retainer.stl` | 1 | 33 x 33 x 3 | S3 bearing retainer |
+| `s3_retainer.stl` | 1 | 32 x 32 x 3 | S3 bearing retainer |
 | `f_stator.stl` | 1 | 122 x 122 x 43 | F roll stator - plate down |
 | `f_rotor.stl` | 1 | 64 x 64 x 42 | F roll rotor - top plate down |
-| `f_retainer.stl` | 1 | 28 x 28 x 3 | F bearing retainer |
+| `f_retainer.stl` | 1 | 27 x 27 x 3 | F bearing retainer |
 | `idler_tyre.stl` | 4 | 16 x 16 x 5 | idler tyre for a 623 bearing (2 per roll joint) |
 | `link_s1_s2.stl` | 1 | 104 x 104 x 22 | link L->L, 22 mm - bottom lip down |
 | `link_s2_s3.stl` | 1 | 126 x 126 x 60 | link L->XL, 60 mm - bottom lip down |
