@@ -31,7 +31,7 @@ def dump(wp, name, tol=0.12, ang=0.25):
 
 
 if __name__ == "__main__":
-    which = sys.argv[1:] or ["j1", "j1b"]
+    which = [w for w in sys.argv[1:] if w != "arm"] or ([] if "arm" in sys.argv[1:] else ["j1", "j1b"])
     if "j1" in which:
         p, tb = J1.proximal()
         h = J1.distal_half()
@@ -53,3 +53,55 @@ if __name__ == "__main__":
         dump(d2, "b_j2d_a")
         dump(d2.rotate((0, 0, 0), (0, 0, 1), 180), "b_j2d_b")
         dump(B.bowden_drive(), "b_drive")
+
+
+# ---------------------------------------------------------------- 7-DOF arm
+def export_arm():
+    sys.path.insert(0, str(ROOT))
+    from arm import assembly as A
+    from arm import crank as C
+    from arm import hinge as H
+    from arm import roll as R
+    from arm import torso as T
+    chain = []
+    for name, spec, mount in A.CHAIN:
+        st, mv = A.element_parts(name, spec)
+        for k, w in list(st.items()) + list(mv.items()):
+            dump(w, "arm_" + k, 0.15, 0.3)
+        z_in, z_out = A.element_io(spec, name)
+        e = {"name": name, "mount": mount, "in_z": z_in, "out_z": z_out,
+             "static": ["arm_" + k for k in st], "moving": ["arm_" + k for k in mv]}
+        if isinstance(spec, H.HingeSpec):
+            (ay, az), (ty, tz, phi) = spec.tangent()
+            wa, wb = spec.wraps()
+            e.update(kind="hinge", lo=spec.lo, hi=spec.hi, label=A.JOINT_LABEL[name],
+                     cord=dict(R=spec.R, gx=spec.gx, ay=ay, az=az, ty=ty, tz=tz, phi=phi, wa=wa, wb=wb,
+                               in_z=spec.in_z, plate=spec.plate_top))
+        elif isinstance(spec, R.RollSpec):
+            sx, sy = spec.socket_xy()
+            wa, wb = spec.wraps()
+            e.update(kind="roll", lo=spec.lo, hi=spec.hi, label=A.JOINT_LABEL[name],
+                     cord=dict(R=spec.R, sx=sx, sy=sy, yi=spec.idler_y(), ri=R.IDLER_CORD_R,
+                               za=spec.z_a, zb=spec.z_b, wa=wa, wb=wb, in_z=spec.in_z))
+        else:
+            e.update(kind="link")
+        chain.append(e)
+    for k, w in A.crank_parts().items():
+        dump(w, "arm_" + k, 0.4 if k == "crank_spool" else 0.15, 0.8 if k == "crank_spool" else 0.3)
+    dump(T.shoulder_beam(A.S1), "arm_torso_beam", 0.2, 0.3)
+    dump(T.crank_rack(3), "arm_crank_rack", 0.2, 0.3)
+    meta = {
+        "world": A.WORLD.tolist(),
+        "chain": chain,
+        "cranks": {j: {"m": m.tolist(), "ratio": A.crank_ratio(j)} for j, m in A.crank_frames().items()},
+        "racks": [[x, y] for x, y in A.RACK_CENTRES],
+        "crank": {"r": C.R_SPOOL, "sock_x": C.SOCK_X, "block_z": C.BLOCK_Z[0], "beam_z": C.BEAM_Z[1]},
+        "beam": {"y0": T.BEAM_Y[0], "y1": T.BEAM_Y[1], "h": T.BEAM_H, "s1_y": T.S1_Y},
+    }
+    with open(OUT / "arm_chain.json", "w") as f:
+        json.dump(meta, f, separators=(",", ":"))
+    print("arm_chain.json written")
+
+
+if __name__ == "__main__" and "arm" in sys.argv[1:]:
+    export_arm()

@@ -4,7 +4,7 @@ An open, fully 3D-printed **tendon-driven torso with two arms**. All motors sit 
 
 We build it up one joint at a time.
 
-![J1b two-DOF arm](docs/img/j1b_assembly.png)
+![7-DOF tendon arm](docs/img/arm_assembly.png)
 
 ## Status
 
@@ -13,7 +13,8 @@ We build it up one joint at a time.
 | [J1: 1-DOF tendon hinge test rig](joints/j1-hinge/) | designed, STL ready, **not printed/tested yet** |
 | [J1-S: NEMA17, 6:1 tendon reduction, Bowden-ready center](joints/j1s-hinge/) | designed, STL ready, **not printed/tested yet** |
 | [J1b: 2-DOF, J1-S elbow + J2 wrist, both motors remote (J2 via Bowden)](joints/j1b-2dof/) | designed, STL ready, **not printed/tested yet** |
-| Gripper, shoulder, full arm, torso | see [roadmap](docs/roadmap.md) |
+| [**Arm: 7 DOF, hand-cranked**](arm/), shoulder (3), elbow, forearm twist, wrist (2) | designed, all 37 parts print-ready and CAD-checked, **not printed yet** |
+| Gripper, second arm, motors | see [roadmap](docs/roadmap.md) |
 
 ## Interactive viewer
 
@@ -28,6 +29,7 @@ joints/j1-hinge/      J1 (servo, 1:1): CadQuery source, STL/STEP, build guide
 joints/j1s-hinge/     J1-S (stepper, 6:1, Bowden center)
 joints/j1b-2dof/      J1b: J1-S + J2 wrist module + Bowden drive module
 joints/common/        shared CAD helpers
+arm/                  the full 7-DOF arm: modules, links, cranks, torso, STLs, build guide
 tools/                preview renders + collision / clearance checks
 ```
 

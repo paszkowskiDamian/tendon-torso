@@ -177,11 +177,11 @@ a { color: var(--accent); }
         <li>The drive module can sit anywhere. In the torso it becomes one slot in a row of motors.</li>
       </ol>
       <ol id="how-arm" hidden>
-        <li><b>Seven joints, like a human arm without the hand:</b> shoulder flexion, abduction and rotation, elbow, forearm twist, wrist flexion and wrist tilt.</li>
-        <li><b>Shoulder flexion + abduction</b> use a <i>cable differential</i>. Two drums are driven by cranks S1 and S2 through bare tendons over idlers. Turning both cranks the same way raises the arm forward; turning them opposite ways swings it out sideways. Both cranks share the load.</li>
-        <li><b>Upper-arm rotation and forearm twist</b> are <i>roll joints</i>: a big ring around the arm's long axis, wrapped by its own tendon pair. The hollow center lets every tendon further out pass straight down the middle.</li>
-        <li><b>Elbow, forearm, wrist:</b> each tendon pair runs in Bowden tubes (colored) from its crank through the shoulder and every joint center, so moving one joint doesn't pull another's tendons.</li>
-        <li><b>Cranks for now:</b> every crank sits where a motor will go later, with the same spool and ratio. Swapping a crank for a NEMA17 + spool changes nothing else.</li>
+        <li><b>Every part here is printable CAD</b> from the <code>arm/</code> folder: hinge modules, roll modules, links, cranks and the shoulder beam. You can print them as shown.</li>
+        <li><b>Hinges</b> (shoulder flexion and abduction, elbow, both wrist axes): a hollow drum on two 608 bearings, wrapped by a pair of Dyneema cords. The tubes of the joints further out pass through the drum's open center.</li>
+        <li><b>Roll joints</b> (upper-arm rotation, forearm twist): a hollow rotor on two thin-section bearings. The cords come up from the tubes, turn 90° over small idler pulleys and wrap the rotor.</li>
+        <li><b>Every joint</b> gets its own colored pair of PTFE tubes. They run from its crank, through the shoulder beam, and down the core of every joint before it.</li>
+        <li><b>Each crank</b> turns a spool. A pin through the crank arm locks it every 10°, and its turns = joint angle × ratio. Later each crank can be swapped for a NEMA17 + spool.</li>
       </ol>
     </div>
     <p class="sub" style="font-size:12px">Source, STL files and build guides: <a href="https://github.com/paszkowskiDamian/tendon-torso" target="_blank" rel="noopener">github.com/paszkowskiDamian/tendon-torso</a></p>
@@ -368,155 +368,144 @@ a { color: var(--accent); }
     };
   }
 
-  // ======================================================== rig: 7-DOF human-like arm (concept, crank driven)
-  function buildArm(root) {
-    // human-ish proportions (mm); arm hangs along -Z, forward is -Y (towards the default camera), outwards is +X
-    const L_UP = 300, L_FORE = 250, L_HAND = 70;
-    const C = {
-      link: material(0xe3a043, true), link2: material(0x5aa469, true), torso: material(0x8c96a0, true),
-      drum: material(0x3f6fb5, false), ring: material(0xb07aa1, false), lug: material(0x9aa3ad, false),
-      dark: material(0x30353b, false), knob: material(0xd6452f, false), hand: material(0xe15759, false),
-    };
-    const cyl = (r1, r2, h, mat, seg = 40) => new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg, 1, false), mat);
-    const add = (parent, mesh, pos = [0, 0, 0], rot = null) => {
-      mesh.position.set(...pos); if (rot) mesh.rotation.set(...rot); parent.add(mesh); return mesh;
-    };
-    const RX = [0, 0, Math.PI / 2];        // cylinder axis -> X
-    const RZ = [Math.PI / 2, 0, 0];        // cylinder axis -> Z
+  // ======================================================== rig: 7-DOF arm, real CAD (arm/ package), crank driven
+  let ARM = null;
+  const loadArm = () => ARM ? Promise.resolve(ARM) :
+    fetch('models/arm_chain.json').then(r => { if (!r.ok) throw new Error('arm_chain.json: HTTP ' + r.status); return r.json(); })
+      .then(d => (ARM = d));
 
-    // --- torso with crank bank on the front face (y = -80)
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(280, 160, 460), C.torso);
-    add(root, torso, [-190, 0, -170]);
-    add(root, new THREE.Mesh(new THREE.BoxGeometry(60, 90, 60), C.lug), [-35, 0, 40]);   // shoulder bracket
-    const JOINTS = [
-      { key: 'S1', name: 'Shoulder drum A', ratio: 8, color: 0xd6452f },
-      { key: 'S2', name: 'Shoulder drum B', ratio: 8, color: 0x2f6fd6 },
-      { key: 'S3', name: 'Upper-arm rotation', ratio: 4, color: 0xb07aa1 },
-      { key: 'E', name: 'Elbow', ratio: 6, color: 0x2f9b5a },
-      { key: 'F', name: 'Forearm twist', ratio: 3, color: 0xd9821a },
-      { key: 'W1', name: 'Wrist flexion', ratio: 3.33, color: 0x8a5cd6 },
-      { key: 'W2', name: 'Wrist tilt', ratio: 3, color: 0x17a2b8 },
-    ];
-    const crankPos = [[-280, -40], [-225, -40], [-170, -40], [-115, -40], [-252, -150], [-197, -150], [-142, -150]];
-    const cranks = JOINTS.map((j, i) => {
-      const [x, z] = crankPos[i];
-      const g = new THREE.Group(); g.position.set(x, -80, z); root.add(g);
-      add(g, cyl(20, 20, 10, C.dark), [0, -5, 0]);                          // spool housing
-      const arm = new THREE.Group(); arm.position.y = -12; g.add(arm);
-      add(arm, new THREE.Mesh(new THREE.BoxGeometry(8, 6, 46), C.dark), [0, 0, 19]);
-      add(arm, cyl(4.5, 4.5, 22, material(j.color, false)), [0, -12, 40]);   // handle knob, coloured per joint
-      const lb = label(j.key); lb.position.set(0, -14, -34); g.add(lb);
-      return { g, arm, spoolPos: V(x, -60, z) };
+  function buildArm(root) {
+    const D = ARM;
+    const m4 = rows => { const m = new THREE.Matrix4(); m.set(...rows.flat()); return m; };
+    const fixed = (parent, mat) => { const g = new THREE.Group(); g.matrixAutoUpdate = false; g.matrix.copy(mat); parent.add(g); return g; };
+    const parts = [];
+    const COL = { base: 0x8c96a0, rotor_a: 0x5aa469, rotor_b: 0x77bb85, rotor: 0x5aa469, stator: 0x8c96a0,
+      retainer: 0x30353b, idler: 0x30353b, link: 0xe3a043 };
+    const colorOf = n => {
+      for (const k of ['rotor_a', 'rotor_b', 'retainer', 'stator', 'base', 'rotor', 'idler']) if (n.includes(k)) return COL[k];
+      return COL.link;
+    };
+
+    // table + torso
+    const tableMat = material(0x6b5a48, false);
+    const table = new THREE.Mesh(new THREE.BoxGeometry(700, 520, 30), tableMat);
+    table.position.set(130, 250, -15); root.add(table);
+    parts.push(['arm_torso_beam', 0x9aa3ad, root, true]);
+    D.racks.forEach(([x, y]) => { const g = new THREE.Group(); g.position.set(x, y, 0); root.add(g); parts.push(['arm_crank_rack', 0x8c96a0, g, false]); });
+
+    // arm chain
+    const world = fixed(root, m4(D.world));
+    const J = {};
+    let out = world;
+    D.chain.forEach((e, idx) => {
+      const elem = new THREE.Group(); elem.rotation.z = rad(e.mount); out.add(elem);
+      const inner = new THREE.Group(); inner.position.z = -e.in_z; elem.add(inner);
+      const mv = new THREE.Group(); inner.add(mv);
+      e.static.forEach(n => parts.push([n, colorOf(n), inner, n.includes('link'), null]));
+      e.moving.forEach(n => parts.push([n, colorOf(n), mv, false, n.endsWith('_b') ? 'half' : null]));
+      const nxt = new THREE.Group(); nxt.position.z = e.out_z; mv.add(nxt);
+      e.inner = inner; e.mv = mv; e.idx = idx;
+      if (e.kind !== 'link') J[e.name] = e;
+      out = nxt;
     });
 
-    // --- shoulder: cable differential (two drums on the flexion axis + yoke)
-    const shoulder = new THREE.Group(); root.add(shoulder);
-    const RD = 48;
-    const drumA = new THREE.Group(); drumA.position.x = -38; shoulder.add(drumA);
-    const drumB = new THREE.Group(); drumB.position.x = 38; shoulder.add(drumB);
-    for (const d of [drumA, drumB]) {
-      add(d, cyl(RD, RD, 14, C.drum), [0, 0, 0], RX);
-      add(d, new THREE.Mesh(new THREE.BoxGeometry(16, 6, RD * 1.6), C.dark), [0, 0, 0]);   // spoke to see it turn
-    }
-    // idlers above the drums, tendons go up and into the torso
-    for (const x of [-38, 38]) for (const s of [-1, 1]) add(shoulder, cyl(7, 7, 8, C.lug), [x, s * RD, 95], RX);
-    const s1 = new THREE.Group(); shoulder.add(s1);               // flexion (about X)
-    add(s1, new THREE.Mesh(new THREE.TorusGeometry(30, 7, 12, 40), C.lug), [0, 0, 0], [0, Math.PI / 2, 0]);
-    const s2 = new THREE.Group(); s1.add(s2);                     // abduction (about Y)
-    add(s2, cyl(9, 9, 70, C.dark), [0, 0, 0], [0, 0, 0]);         // cross pin along Y
-    add(s2, cyl(36, 36, 24, C.lug), [0, 0, -40], RZ);             // fixed collar of the roll joint
-    const s3 = new THREE.Group(); s2.add(s3);                     // upper-arm rotation (about Z)
-    add(s3, new THREE.Mesh(new THREE.TorusGeometry(44, 7, 14, 48), C.ring), [0, 0, -62]);
-    add(s3, cyl(40, 34, L_UP - 100, C.link), [0, 0, -62 - (L_UP - 100) / 2], RZ);
-    for (const s of [-1, 1]) add(s3, new THREE.Mesh(new THREE.BoxGeometry(10, 36, 60), C.lug), [s * 25, 0, -L_UP + 22]);
-    const elbow = new THREE.Group(); elbow.position.z = -L_UP; s3.add(elbow);   // elbow (about X)
-    add(elbow, cyl(38, 38, 30, C.drum), [0, 0, 0], RX);
-    add(elbow, new THREE.Mesh(new THREE.BoxGeometry(32, 8, 70), C.dark), [0, 0, 0]);
-    add(elbow, cyl(30, 30, 20, C.lug), [0, 0, -48], RZ);           // forearm roll collar (fixed to elbow)
-    const fore = new THREE.Group(); elbow.add(fore);               // forearm twist (about Z)
-    add(fore, new THREE.Mesh(new THREE.TorusGeometry(34, 6, 12, 40), C.ring), [0, 0, -66]);
-    add(fore, cyl(31, 25, L_FORE - 110, C.link2), [0, 0, -72 - (L_FORE - 110) / 2], RZ);
-    for (const s of [-1, 1]) add(fore, new THREE.Mesh(new THREE.BoxGeometry(8, 28, 44), C.lug), [s * 19, 0, -L_FORE + 16]);
-    const w1 = new THREE.Group(); w1.position.z = -L_FORE; fore.add(w1);          // wrist flexion (about X)
-    add(w1, cyl(22, 22, 26, C.drum), [0, 0, 0], RX);
-    add(w1, new THREE.Mesh(new THREE.BoxGeometry(26, 10, 40), C.dark), [0, 0, 0]);
-    const w2 = new THREE.Group(); w2.position.z = -26; w1.add(w2);                  // wrist tilt (about Y)
-    add(w2, cyl(17, 17, 26, C.drum), [0, 0, 0]);
-    add(w2, cyl(28, 28, 8, C.hand), [0, 0, -L_HAND + 30], RZ);                       // gripper mount plate
-    add(w2, cyl(10, 14, 30, C.hand), [0, 0, -22], RZ);
+    // cranks
+    const CR = {};
+    const KEYS = ['S1', 'S2', 'S3', 'E', 'F', 'W1', 'W2'];
+    const TUBE_COL = { S1: 0xd6452f, S2: 0x2f6fd6, S3: 0xb07aa1, E: 0x2f9b5a, F: 0xd9821a, W1: 0x8a5cd6, W2: 0x17a2b8 };
+    KEYS.forEach(k => {
+      const c = D.cranks[k];
+      const g = fixed(root, m4(c.m));
+      const spin = new THREE.Group(); g.add(spin);
+      ['arm_crank_frame', 'arm_crank_socket_block', 'arm_crank_nut_cup'].forEach(n => parts.push([n, 0x8c96a0, g, false]));
+      parts.push(['arm_crank_spool', 0x3f6fb5, spin, false]);
+      parts.push(['arm_crank_arm', 0x30353b, spin, false]);
+      const knobG = new THREE.Group(); spin.add(knobG);
+      parts.push(['arm_crank_knob', TUBE_COL[k], knobG, false]);
+      const lb = label(k); lb.position.set(0, 0, 70); g.add(lb);
+      CR[k] = { g, spin, ratio: c.ratio };
+    });
 
-    // --- tendons: shoulder drums (bare), Bowden tubes for everything further out
-    const bare = [dyn(root, tendonMats.flex), dyn(root, tendonMats.flex), dyn(root, tendonMats.ext), dyn(root, tendonMats.ext)];
-    const tubeMats = JOINTS.slice(2).map(j => new THREE.MeshStandardMaterial({ color: j.color, roughness: 0.35, transparent: true, opacity: 0.8 }));
-    const tubes = tubeMats.map(m => dyn(root, m));
+    // tendons
+    const cordMat = M(0xf5f0e6);
+    const tubeMats = Object.fromEntries(KEYS.map(k => [k, new THREE.MeshStandardMaterial({ color: TUBE_COL[k], roughness: 0.35, transparent: true, opacity: 0.75 })]));
+    const tubeSet = {}; KEYS.forEach(k => { tubeSet[k] = [dyn(root, tubeMats[k]), dyn(root, tubeMats[k])]; });
+    const cordSet = {}; KEYS.forEach(k => { cordSet[k] = [dyn(J[k].inner, cordMat), dyn(J[k].inner, cordMat)]; });
     let tubeMeshes = [];
-    const W = (obj, x, y, z) => obj.localToWorld(V(x, y, z));
-    // end point of each joint's tube (in the frame that does NOT move with that joint)
-    const ends = [
-      () => [W(s2, 52, -6, -48), W(s2, 46, -12, -60)],            // S3 ring
-      () => [W(s3, 4, -30, -L_UP + 60), W(s3, 0, -38, -L_UP + 20)], // elbow drum
-      () => [W(elbow, 36, -6, -46), W(elbow, 40, -12, -64)],       // forearm ring
-      () => [W(fore, 4, -18, -L_FORE + 50), W(fore, 0, -22, -L_FORE + 16)], // wrist flexion drum
-      () => [W(w1, 2, -14, -16), W(w1, 0, -18, -26)],              // wrist tilt drum
-    ];
 
-    function crankTurns(v) {
-      const [fl, ab, ro, el, pr, wf, wd] = v;
-      const dA = fl + ab, dB = fl - ab;      // differential: sum and difference
-      return [dA, dB, ro, el, pr, wf, wd].map((a, i) => a * JOINTS[i].ratio / 360);
+    const P = (obj, x, y, z) => obj.localToWorld(V(x, y, z));
+    function hingeSocket(e, s) {      // s = -1 cord A (x<0, +y), +1 cord B
+      const c = e.cord, sy = -s;
+      const A = V(s * c.gx, sy * c.ay, c.az);
+      const u = V(0, c.ty - c.ay, c.tz - c.az).normalize();
+      const d = V(0, sy * u.y, u.z);
+      const C = A.clone().addScaledVector(d, -((c.az - c.in_z + 2) / u.z));
+      return [C.clone().addScaledVector(d, -14), C, A.clone().addScaledVector(d, -8)];
+    }
+    function route(k, s) {
+      const e = J[k], ci = KEYS.indexOf(k);
+      const ox = ((ci % 4) - 1.5) * 4.2 + s * 1.2, oy = (Math.floor(ci / 4) - 0.5) * 4.6;
+      const c = D.crank, cr = CR[k].g;
+      const sx = s < 0 ? c.sock_x : -c.sock_x, syy = s < 0 ? c.r : -c.r;
+      const pts = [P(cr, sx, syy, c.block_z + 10), P(cr, sx, syy, c.beam_z + 40)];
+      const by = D.beam.y1, s1y = D.beam.s1_y;
+      pts.push(V(ox * 2, by - 6, 30 + oy), V(ox * 1.5, 0, 28 + oy), V(ox, s1y + 30, 22 + oy));
+      // through every element before this joint
+      for (let i = 0; i < e.idx; i++) {
+        const el = D.chain[i];
+        if (el.kind === 'link') { pts.push(P(el.inner, ox, oy, 3), P(el.inner, ox, oy, el.out_z - 3)); }
+        else if (el.kind === 'hinge') { pts.push(P(el.inner, ox, oy * 0.6, el.in_z + 2), P(el.inner, ox, oy * 0.3, 0), P(el.mv, ox, oy * 0.6, el.out_z - 2)); }
+        else { pts.push(P(el.inner, ox * 0.8, oy * 0.8, el.in_z + 2), P(el.inner, ox * 0.8, oy * 0.8, el.out_z - 4)); }
+      }
+      if (e.kind === 'hinge') hingeSocket(e, s).forEach(p => pts.push(P(e.inner, p.x, p.y, p.z)));
+      else { const x = s < 0 ? e.cord.sx : -e.cord.sx; pts.push(P(e.inner, x, e.cord.sy, e.in_z - 16), P(e.inner, x, e.cord.sy, -2)); }
+      return pts;
+    }
+    function cords(k, q) {
+      const e = J[k], c = e.cord;
+      if (e.kind === 'hinge') {
+        const A = V(-c.gx, c.ay, c.az), B = V(c.gx, -c.ay, c.az);
+        cordSet[k][0](polyTube([A].concat(arc(-c.gx, 0, 0, c.R, c.phi, c.phi + c.wa + q, 30)), 0.6));
+        cordSet[k][1](polyTube([B].concat(arc(c.gx, 0, 0, c.R, 180 - c.phi, 180 - c.phi - c.wb + q, 30)), 0.6));
+      } else {
+        const idl = (x, zg) => { const zc = zg - c.ri, pts = [V(x, c.sy, -1)];
+          for (let i = 0; i <= 8; i++) { const t = rad(90 * i / 8); pts.push(V(x, c.yi + c.ri * Math.cos(t), zc + c.ri * Math.sin(t))); }
+          return pts; };
+        const ringA = []; for (let i = 0; i <= 40; i++) { const a = rad(-(c.wa - q) * i / 40); ringA.push(V(c.R * Math.cos(a), c.R * Math.sin(a), c.za)); }
+        const ringB = []; for (let i = 0; i <= 40; i++) { const a = rad(180 + (c.wb + q) * i / 40); ringB.push(V(c.R * Math.cos(a), c.R * Math.sin(a), c.zb)); }
+        cordSet[k][0](polyTube(idl(c.sx, c.za).concat(ringA), 0.6));
+        cordSet[k][1](polyTube(idl(-c.sx, c.zb).concat(ringB), 0.6));
+      }
     }
 
-    // crank table
-    $('crankRows').innerHTML = JOINTS.map((j, i) =>
-      `<tr><td><span class="sw" style="background:#${j.color.toString(16).padStart(6, '0')}"></span> ${j.key}</td><td>${j.name}</td>` +
-      `<td class="n">${j.ratio} : 1</td><td class="n" id="ct${i}">0.00</td></tr>`).join('');
+    $('crankRows').innerHTML = KEYS.map((k, i) =>
+      `<tr><td><span class="sw" style="background:#${TUBE_COL[k].toString(16).padStart(6, '0')}"></span> ${k}</td><td>${J[k].label}</td>` +
+      `<td class="n">${CR[k].ratio.toFixed(2)} : 1</td><td class="n" id="ct${i}">0.00</td></tr>`).join('');
 
+    const anims = { S1: t => 40 + 45 * Math.sin(t * 0.45), S2: t => 30 + 28 * Math.sin(t * 0.33 + 1), S3: t => 45 * Math.sin(t * 0.55),
+      E: t => 60 + 45 * Math.sin(t * 0.7 + 0.5), F: t => 70 * Math.sin(t * 0.9), W1: t => 45 * Math.sin(t * 1.1 + 1), W2: t => 22 * Math.sin(t * 1.3) };
     return {
-      title: 'Tendon Arm, 7 DOF', concept: true,
-      sub: 'Human-like arm without the hand. Seven joints, every tendon starts at a hand crank in the torso, and the cranks become motors later.',
-      pass: 'Bowden tubes', parts: [], cam: { target: [-50, -40, -170], dist: 1750 }, noHalf: true,
-      joints: [
-        { label: 'Shoulder flexion (forward)', badge: 'shoulder', min: -40, max: 150, anim: t => 45 + 45 * Math.sin(t * 0.5) },
-        { label: 'Shoulder abduction (sideways)', min: 0, max: 150, anim: t => 30 + 25 * Math.sin(t * 0.37 + 1) },
-        { label: 'Upper-arm rotation', min: -80, max: 80, anim: t => 35 * Math.sin(t * 0.6) },
-        { label: 'Elbow flexion', badge: 'elbow', min: 0, max: 140, anim: t => 70 + 50 * Math.sin(t * 0.7 + 0.5) },
-        { label: 'Forearm twist', min: -85, max: 85, anim: t => 70 * Math.sin(t * 0.9) },
-        { label: 'Wrist flexion', min: -60, max: 60, anim: t => 40 * Math.sin(t * 1.1 + 1) },
-        { label: 'Wrist tilt', min: -20, max: 30, anim: t => 5 + 20 * Math.sin(t * 1.3) },
-      ],
+      title: 'Tendon Arm, 7 DOF',
+      sub: 'Printable CAD from the arm/ folder: 5 hinge modules, 2 roll modules, 6 links, 7 hand cranks. Every joint is driven by a pair of 1 mm Dyneema cords in PTFE tubes.',
+      pass: 'Bowden tubes and cords', parts, cam: { target: [60, -120, -330], dist: 2700 }, noHalf: false,
+      joints: KEYS.map(k => ({ label: J[k].label, badge: k === 'S1' ? 'shoulder' : k === 'E' ? 'elbow' : null,
+        min: J[k].lo, max: J[k].hi, anim: anims[k] })),
       set(v) {
-        const [fl, ab, ro, el, pr, wf, wd] = v;
-        xr(s1, -fl); yr(s2, -ab); zr(s3, ro); xr(elbow, -el); zr(fore, pr); xr(w1, -wf); yr(w2, wd);
-        const turns = crankTurns(v);
-        xr(drumA, -(fl + ab)); xr(drumB, -(fl - ab));
-        cranks.forEach((c, i) => { c.arm.rotation.y = turns[i] * 2 * Math.PI; $('ct' + i).textContent = turns[i].toFixed(2); });
+        KEYS.forEach((k, i) => {
+          const e = J[k];
+          if (e.kind === 'hinge') e.mv.rotation.x = rad(v[i]); else e.mv.rotation.z = rad(v[i]);
+          const turns = v[i] * CR[k].ratio / 360;
+          CR[k].spin.rotation.x = turns * 2 * Math.PI;
+          const ct = $('ct' + i); if (ct) ct.textContent = turns.toFixed(2);
+        });
         root.updateMatrixWorld(true);
-
-        // shoulder drums: each tendon goes from the drum's side, up over an idler, into the torso to its crank spool
-        const sp = [cranks[0].spoolPos, cranks[1].spoolPos];
-        [[-38, 0], [38, 1]].forEach(([x, k], n) => {
-          const d = n === 0 ? fl + ab : fl - ab;
-          for (const s of [1, -1]) {
-            const start = s > 0 ? 0 : 180;
-            const wrap = arc(x, 0, 0, RD + 1, start - (s > 0 ? 100 - d : 100 + d) * s, start, 20);
-            const pts = wrap.concat([V(x, s * (RD + 1), 95), V(-70, s * 20 + 0, 95), V(-150, -40 + s * 6, 30), sp[k].clone().add(V(0, 20, 0))]);
-            bare[n * 2 + (s > 0 ? 0 : 1)](polyTube(pts, 1.2));
-          }
+        const show = $('pass').checked;
+        tubeMeshes = [];
+        KEYS.forEach((k, i) => {
+          cords(k, v[i]);
+          [-1, 1].forEach((s, n) => { const m = tubeSet[k][n](smoothTube(route(k, s), 2.0, 220)); m.visible = show; tubeMeshes.push(m); });
         });
-
-        // Bowden tubes: crank spool -> torso -> shoulder centre -> down the arm through each joint centre -> joint
-        const centre = [W(shoulder, 0, 0, 0), W(s2, 0, 0, -40), W(s3, 0, 0, -150), W(s3, 0, 0, -L_UP + 30), W(elbow, 0, 0, 0),
-          W(elbow, 0, 0, -40), W(fore, 0, 0, -140), W(fore, 0, 0, -L_FORE + 30), W(w1, 0, 0, 0)];
-        const stops = [1, 3, 5, 7, 8];   // how far along the centreline each joint's tube runs before peeling off
-        tubeMeshes = tubes.map((setT, i) => {
-          const off = (i - 2) * 4;
-          const start = cranks[i + 2].spoolPos;
-          const pts = [start.clone(), start.clone().add(V(0, 30, 40)), V(-120, off, 30), V(-50, off, 20)];
-          for (let k = 0; k <= stops[i] - (i === 0 ? 1 : 0); k++) pts.push(centre[k].clone().add(V(off * 0.4, off * 0.4, 0)));
-          const m = setT(smoothTube(pts.concat(ends[i]()), 2.2, 200));
-          m.visible = $('pass').checked;
-          return m;
-        });
+        KEYS.forEach(k => cordSet[k].forEach(() => {}));
       },
       togglePass: v => tubeMeshes.forEach(m => m.visible = v),
     };
@@ -531,6 +520,11 @@ a { color: var(--accent); }
   function show(name) {
     if (!RIGS[name]) name = 'j1';
     if (name === current) return;
+    if (name === 'arm' && !ARM) {
+      $('loading').hidden = false; $('loading').textContent = 'loading arm…';
+      loadArm().then(() => show(name)).catch(err => { $('loading').textContent = 'Could not load the arm (' + err.message + '). Reload to try again.'; });
+      return;
+    }
     current = name;
     if (rigRoot) {
       scene.remove(rigRoot);
