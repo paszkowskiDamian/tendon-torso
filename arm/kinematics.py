@@ -277,3 +277,77 @@ def crank_turns(q_deg):
     """Crank turns from the straight pose for each joint (= joint angle * ratio / 360)."""
     from . import assembly as A
     return np.array([q_deg[i] * A.crank_ratio(j) / 360.0 for i, j in enumerate(JOINTS)])
+
+
+# ------------------------------------------------------------------ low-lever IK
+def tension_cost(q_deg, payload=None):
+    """Sum of squared gravity cord tensions (N^2): small = arm held close, short levers."""
+    from . import statics as S
+    from . import assembly as A
+    tau = S.gravity_torques(q_deg, S.PAYLOAD if payload is None else payload)
+    R = np.array([A.joint_spec(j).R / 1000 for j in JOINTS])
+    return float(np.sum((tau / R) ** 2))
+
+
+def _task_jac(q, R_t, frame, tool, w_rot):
+    J = jacobian(q, frame, tool) * (np.pi / 180)
+    return np.vstack([J[:3], w_rot * J[3:]]) if R_t is not None else J[:3]
+
+
+def optimize_posture(q, target_pos, target_R=None, tool=TOOL_OFFSET, frame="shoulder", iters=40,
+                     pos_tol=0.5, rot_tol=0.5, w_rot=150.0):
+    """Keep the hand where it is and move the spare joints to lower the cord tensions."""
+    lo, hi = limits()
+    p_t = np.asarray(target_pos, float)
+    cost = tension_cost(q)
+    alpha = 4.0
+    for _ in range(iters):
+        g = np.zeros(7)
+        for i in range(7):
+            d = np.zeros(7); d[i] = 0.5
+            g[i] = (tension_cost(np.clip(q + d, lo, hi)) - tension_cost(np.clip(q - d, lo, hi))) / 1.0
+        Jt = _task_jac(q, target_R, frame, tool, w_rot)
+        N = np.eye(7) - np.linalg.pinv(Jt) @ Jt
+        # joints at a limit that would be pushed further don't move
+        step = -N @ g
+        nrm = np.max(np.abs(step))
+        if nrm < 1e-9:
+            break
+        improved = False
+        while alpha > 0.05:
+            qn = np.clip(q + step / nrm * alpha, lo, hi)
+            r = _ik_once(p_t, target_R, qn, lo, hi, (lo + hi) / 2, tool, frame, pos_tol, rot_tol, 30, w_rot)
+            if r.ok:
+                c = tension_cost(r.q)
+                if c < cost - 1e-6:
+                    q, cost, improved = r.q, c, True
+                    alpha = min(alpha * 1.5, 10.0)
+                    break
+            alpha *= 0.5
+        if not improved:
+            break
+    return q, cost
+
+
+def ik_low_lever(target_pos, target_R=None, q0=None, tool=TOOL_OFFSET, frame="shoulder", seeds=6, seed=0):
+    """IK that, among all joint solutions reaching the target, prefers short gravity levers
+    (minimum sum of squared cord tensions). Uses several starting postures + null-space descent."""
+    lo, hi = limits()
+    rng = np.random.default_rng(seed)
+    starts = [] if q0 is None else [np.asarray(q0, float)]
+    starts += [np.zeros(7), np.array([30, 10, 0, 90, 0, 0, 0.]), np.array([60, 20, -40, 100, 0, 0, 0.]),
+               np.array([60, 20, 40, 100, 0, 0, 0.])]
+    starts += [rng.uniform(lo, hi) for _ in range(seeds)]
+    best = None
+    for s in starts:
+        r = ik(target_pos, target_R, q0=s, tool=tool, frame=frame, restarts=0, seed=seed)
+        if not r.ok:
+            continue
+        q, c = optimize_posture(r.q, target_pos, target_R, tool, frame)
+        if best is None or c < best[1]:
+            T = fk(q, frame, tool)
+            best = (q, c, IKResult(q, True, float(np.linalg.norm(np.asarray(target_pos) - T[:3, 3])),
+                                   math.degrees(float(np.linalg.norm(rot_error(target_R, T[:3, :3])))) if target_R is not None else 0.0, 0))
+    if best is None:
+        return ik(target_pos, target_R, q0=q0, tool=tool, frame=frame), None
+    return best[2], best[1]

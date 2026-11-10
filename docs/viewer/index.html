@@ -159,6 +159,12 @@ a { color: var(--accent); }
         <thead><tr><th>Crank</th><th>Joint</th><th style="text-align:right">Ratio</th><th style="text-align:right">Turns</th></tr></thead>
         <tbody id="crankRows"></tbody>
       </table>
+      <span class="label" style="margin-top:6px">Gravity loads (live)</span>
+      <table class="cranks">
+        <thead><tr><th>Joint</th><th style="text-align:right">N·m</th><th style="text-align:right">Cord N</th><th style="text-align:right">Knob N</th><th></th></tr></thead>
+        <tbody id="loadRows"></tbody>
+      </table>
+      <p class="sub" id="massNote" style="font-size:12px"></p>
       <p class="sub" style="font-size:12px">Each crank turns a spool, so its turns = joint angle × ratio. Every crank needs a ratchet or friction brake, or the arm will drop under its own weight.</p>
     </div>
 
@@ -538,8 +544,8 @@ a { color: var(--accent); }
     }
     const gram = (Jr, add) => Jr.map((ri, i) => Jr.map((rj, j) => ri.reduce((s, v, k) => s + v * rj[k], 0) + (i === j ? add : 0)));
     const JT = (Jr, y) => Jr[0].map((_, k) => Jr.reduce((s, r, i) => s + r[k] * y[i], 0));
-    function ikSolve(pt, qStart, Rt = null, maxSeeds = 6) {
-      const seeds = [qStart, MID.slice()];
+    function ikSolve(pt, qStart, Rt = null, maxSeeds = 6, onlySeed = false) {
+      const seeds = onlySeed ? [qStart] : [qStart, MID.slice()];
       for (let s = 0; s < maxSeeds; s++) seeds.push(LO.map((l, i) => l + Math.random() * (HI[i] - l)));
       let best = null;
       for (const s0 of seeds) {
@@ -570,6 +576,48 @@ a { color: var(--accent); }
         if (done(te)) { best.ok = true; break; }
       }
       return { q: best.q, err: best.te.pos, rot: best.te.rot, ok: !!best.ok };
+    }
+
+    // ---------- statics: gravity torque at every joint (same model as arm/statics.py)
+    const STAT = D.statics, GV = V(0, 0, -9.81);
+    function gravTau() {                       // N*m per joint, current scene pose
+      const bodies = [];
+      D.chain.forEach((e, i) => {
+        bodies.push([i, e.ms, e.inner.localToWorld(V(...e.cs))]);
+        bodies.push([i + 0.5, e.mm, e.mv.localToWorld(V(...e.cm))]);
+      });
+      bodies.push([D.chain.length, STAT.payload, toolG.localToWorld(V(0, 0, D.tool))]);
+      return KJ.map(e => {
+        const m = e.inner.matrixWorld;
+        const p = V().setFromMatrixPosition(m);
+        const a = V().setFromMatrixColumn(m, e.kind === 'hinge' ? 0 : 2).normalize();
+        const M = V();
+        for (const [idx, mass, c] of bodies) if (idx >= e.idx + 0.5) M.add(c.clone().sub(p).multiplyScalar(0.001).cross(GV.clone().multiplyScalar(mass)));
+        return a.dot(M);
+      });
+    }
+    const cordN = tau => tau.map((t, i) => Math.abs(t) / (KJ[i].R / 1000) + STAT.pretension);
+    function leverCost(q) { setQ(q); return gravTau().reduce((s, t, i) => s + (t / (KJ[i].R / 1000)) ** 2, 0); }
+    function lowerLevers(q, pt, Rt) {         // null-space descent: same hand pose, lower cord tensions
+      let cost = leverCost(q), alpha = 4;
+      for (let it = 0; it < 14 && alpha > 0.1; it++) {
+        const g = q.map((_, i) => { const a = q.slice(), b = q.slice(); a[i] += 0.5; b[i] -= 0.5; return leverCost(clampQ(a)) - leverCost(clampQ(b)); });
+        setQ(q);
+        const Jr = jacRows(Rt);
+        const Jg = Jr.map(r => r.reduce((s, v, k) => s + v * g[k], 0));
+        const w = JT(Jr, solveN(gram(Jr, 1e-3), Jg));
+        const ng = g.map((v, i) => v - w[i]);
+        const big = Math.max(...ng.map(Math.abs)); if (big < 1e-9) break;
+        let moved = false;
+        while (alpha > 0.1) {
+          const r = ikSolve(pt, clampQ(q.map((v, i) => v - ng[i] / big * alpha)), Rt, 0, true);
+          if (r.ok) { const c = leverCost(r.q); if (c < cost - 1e-6) { q = r.q; cost = c; moved = true; alpha = Math.min(alpha * 1.5, 10); break; } }
+          alpha *= 0.5;
+        }
+        if (!moved) break;
+      }
+      setQ(q);
+      return q;
     }
 
     // ---------- target + gimbal (shoulder-frame axes: X red outwards, Y green forwards, Z blue up)
@@ -605,13 +653,14 @@ a { color: var(--accent); }
 
     // ---------- reach mode state
     const RANGE = { x: [-450, 750], y: [-600, 900], z: [-900, 450] };
-    let reach = false, orient = false, tgt = V(), tgtR = null, path = false, pathC = null;
+    let reach = false, orient = false, lowLever = true, tgt = V(), tgtR = null, path = false, pathC = null;
     function placeTarget(p, solve = true) {
       tgt.copy(p);
       ['x', 'y', 'z'].forEach(a => { const s = $('t' + a); if (s) { s.value = Math.round(p[a]); $('tv' + a).textContent = Math.round(p[a]) + ' mm'; } });
       giz.position.copy(p.clone().applyMatrix4(SF));
       if (!solve) return;
       const r = ikSolve(tgt, vals.slice(), orient ? tgtR : null, path ? 2 : 6);
+      if (r.ok && lowLever && !path) r.q = lowerLevers(r.q, tgt, orient ? tgtR : null);
       vals = r.q;
       vals.forEach((v, i) => { const s = $('s' + i); if (s) s.value = Math.round(v); });
       marker.material.color.setHex(r.ok ? 0x2f9b5a : 0xd6452f);
@@ -629,6 +678,7 @@ a { color: var(--accent); }
         <div id="reachBox" hidden style="display:flex;flex-direction:column;gap:8px">
           <p class="sub" style="font-size:12.5px;margin:0">Drag the <b style="color:#e5484d">X</b> / <b style="color:#30a46c">Y</b> / <b style="color:#3e63dd">Z</b> arrows on the ball, or the ball itself.</p>
           <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="orientOn"> Also steer the hand's orientation (drag the rings)</label>
+          <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="leverOn" checked> Prefer short levers (lowest cord tensions)</label>
           ${['x', 'y', 'z'].map(a => `<div class="slider"><span><label for="t${a}">Hand ${a.toUpperCase()} ${a === 'x' ? '(outwards)' : a === 'y' ? '(forwards)' : '(up)'}</label><b id="tv${a}">0 mm</b></span>
             <input type="range" id="t${a}" min="${RANGE[a][0]}" max="${RANGE[a][1]}" step="1" value="0"></div>`).join('')}
           <div class="row"><button type="button" id="pathBtn">Trace a figure eight</button><button type="button" id="hereBtn">Target = current hand</button></div>
@@ -640,6 +690,7 @@ a { color: var(--accent); }
         rig.joints.forEach((j, i) => { $('s' + i).disabled = reach; });
         if (reach) { setPlaying(false); placeTarget(currentTool(), false); tgtR = toolRot(); }
       };
+      $('leverOn').onchange = e => { lowLever = e.target.checked; if (reach) placeTarget(tgt.clone()); };
       $('orientOn').onchange = e => {
         orient = e.target.checked; Object.values(rings).forEach(r => r.visible = orient);
         setQ(vals); tgtR = toolRot();
@@ -723,6 +774,15 @@ a { color: var(--accent); }
       if (giz.visible) { const s = camera.position.distanceTo(giz.position) / 1100; gizAx.scale.setScalar(s); marker.scale.setScalar(s); }
     }
 
+    function updateLoads() {
+      const el = $('loadRows'); if (!el) return;
+      const tau = gravTau(), T = cordN(tau);
+      const knob = T.map(x => x * STAT.spool_r / STAT.knob_r);
+      const maxT = Math.max(...T);
+      el.innerHTML = KEYS.map((k, i) => `<tr><td>${k}</td><td class="n">${tau[i].toFixed(2)}</td><td class="n">${T[i].toFixed(0)}</td>` +
+        `<td class="n">${knob[i].toFixed(1)}</td><td style="width:34%"><span style="display:block;height:7px;border-radius:3px;background:${T[i] > 180 ? 'var(--flex)' : T[i] > 90 ? 'var(--flex2)' : 'var(--pass)'};width:${(T[i] / Math.max(maxT, 1) * 100).toFixed(0)}%"></span></td></tr>`).join('');
+      $('massNote').textContent = `Arm ${STAT.mass_kg.toFixed(2)} kg + ${STAT.payload} kg payload; cord = |torque| / drum radius + ${STAT.pretension} N pretension.`;
+    }
     const anims = { S1: t => 40 + 45 * Math.sin(t * 0.45), S2: t => 30 + 28 * Math.sin(t * 0.33 + 1), S3: t => 45 * Math.sin(t * 0.55),
       E: t => 60 + 45 * Math.sin(t * 0.7 + 0.5), F: t => 70 * Math.sin(t * 0.9), W1: t => 45 * Math.sin(t * 1.1 + 1), W2: t => 22 * Math.sin(t * 1.3) };
     return {
@@ -740,6 +800,7 @@ a { color: var(--accent); }
           const ct = $('ct' + i); if (ct) ct.textContent = turns.toFixed(2);
         });
         root.updateMatrixWorld(true);
+        updateLoads();
         const show = $('pass').checked;
         tubeMeshes = [];
         KEYS.forEach((k, i) => {
