@@ -44,6 +44,7 @@ SEAT_W = 1.6               # rotor seat width on each outer race
 RET_HOLE = 3.3             # retainer screw clearance (M3)
 CHEEK_X0, CHEEK_X1 = 3.2, 6.2   # idler cheek faces from the idler centre (x)
 CHEEK_HY = 4.5             # idler cheek half depth (y)
+BOSS_HOLE = 3.2            # M3 through the 623 spacer bosses (d 4.6): 0.7 mm ring wall
 
 
 @dataclass
@@ -153,7 +154,9 @@ def stator(s: RollSpec):
             # bolt: clearance in the outer cheek, self-tapping pilot in the inner one
             d = P.M3_CLR if side != inward else 2.5
             cuts.append(rod((c0 - 1, yi, zc), (c1 + 1, yi, zc), d))
-        cuts.append(rod((x - 2.0, yi, zc), (x + 2.0, yi, zc), P.M3_CLR))
+        # bolt through both spacer bosses, face to face of the cheeks (the cheek holes
+        # start 1 mm outside the cheek, so they don't reach the boss tips)
+        cuts.append(rod((x - CHEEK_X0 - 0.2, yi, zc), (x + CHEEK_X0 + 0.2, yi, zc), BOSS_HOLE))
         # Bowden socket: tube from below, cord exits up to the idler
         cuts.append(cyl_z(P.TUBE_OD / 2 + 0.15, s.in_z - 1, -2.0).translate((x, sy, 0)))
         cuts.append(cyl_z(P.TUBE_ID / 2 + 0.2, -2.5, 1.0).translate((x, sy, 0)))
