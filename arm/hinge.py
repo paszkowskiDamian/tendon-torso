@@ -226,6 +226,20 @@ def rotor_half(s: HingeSpec, side="A"):
     cuts.append(rod((gx, y0, z0), (gx, y1, z1), P.CORD_D + 1.0))
     dv = cq.Vector(y1 - y0, z1 - z0, 0).normalized()
     cuts.append(rod((gx, y1 - dv.x * 3.5, z1 - dv.y * 3.5), (gx, y1 + dv.x * 2, z1 + dv.y * 2), 4.5))
+    # free-cord clearance: the straight cord from the Bowden socket to the drum tangent is
+    # fixed in the base. Near the end of the range where a cord is almost unwound, its
+    # tangent point moves under the neck, which would then press on the cord. Cut the band
+    # that cord sweeps over the whole range (in the groove plane) out of the neck: a slot as
+    # wide as the groove, so its roof in the print is the same 2.4 mm bridge as the tunnel.
+    # (Side B is built mirrored, so it sees the joint angle negated.)
+    (ay, az), _ = s.tangent()
+    b0, b1 = (s.lo, s.hi) if side == "A" else (-s.hi, -s.lo)
+    m = max(4.0, math.degrees(1.5 / s.R))
+    th_a, r_a = math.degrees(math.atan2(az, ay)), math.hypot(ay, az) + 1.5
+    n = int((b1 - b0 + 2 * m) / 2) + 2
+    bs = [b0 - m + (b1 - b0 + 2 * m) * i / (n - 1) for i in range(n)]
+    band = [yz(s.r_groove, phi_t - b) for b in bs] + [yz(r_a, th_a - b) for b in reversed(bs)]
+    cuts.append(cq.Workplane("YZ").workplane(offset=gx - w / 2).polyline(band).close().extrude(w))
     # lighten the side wall (only on big drums)
     if s.R >= 30:
         r_l = (11.15 + s.R * math.cos(math.radians(32.5)) - 3) / 2 + 2
