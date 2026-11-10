@@ -416,6 +416,27 @@ a { color: var(--accent); }
       out = nxt;
     });
 
+    // shoulder balance: masts, sheaves, anchor posts, springs (static, world)
+    (D.balance || []).forEach(n => parts.push([n, n.includes('spring') ? 0xb0b6bd : n.includes('sheave') ? 0x3f6fb5 : 0x9aa3ad, root, false]));
+    const BG = D.balance_geo, balCords = BG ? [dyn(root, M(0xf5f0e6)), dyn(root, M(0xf5f0e6))] : [];
+    function balanceCords() {
+      if (!BG) return;
+      const yoke = D.chain.find(e => e.name === BG.yoke);
+      [1, -1].forEach((sx, n) => {
+        const B = yoke.mv.localToWorld(V(sx * BG.x_s, 0, BG.b_z));
+        const cx = Math.sign(B.x) * BG.x_s, cy = BG.c_y, cz = BG.c_z, R = BG.r;
+        const dy = B.y - cy, dz = B.z - cz, d = Math.hypot(dy, dz);
+        const base = Math.atan2(dz, dy), off = Math.acos(Math.min(1, R / d));
+        const cands = [base + off, base - off];
+        const th = cands.reduce((a, b) => (Math.cos(a) < Math.cos(b) ? a : b));   // tangent on the front side
+        const pts = [B];
+        let end = Math.PI / 2; let t0 = th; if (t0 > end) t0 -= 2 * Math.PI;
+        for (let i = 0; i <= 16; i++) { const t = t0 + (end - t0) * i / 16; pts.push(V(cx, cy + R * Math.cos(t), cz + R * Math.sin(t))); }
+        pts.push(V(cx, BG.y_fair, BG.z_line));
+        balCords[n](polyTube(pts, 0.7));
+      });
+    }
+
     // cranks
     const CR = {};
     const KEYS = ['S1', 'S2', 'S3', 'E', 'F', 'W1', 'W2'];
@@ -801,6 +822,7 @@ a { color: var(--accent); }
         });
         root.updateMatrixWorld(true);
         updateLoads();
+        balanceCords();
         const show = $('pass').checked;
         tubeMeshes = [];
         KEYS.forEach((k, i) => {

@@ -1,8 +1,8 @@
-Arm mass: 1498 g printed (fill 60%) + 674 g hardware = 2.17 kg  (+ 0.3 kg payload at the tool)
+Arm mass: 1519 g printed (fill 60%) + 674 g hardware = 2.19 kg  (+ 0.3 kg payload at the tool)
 
 element         mass g
 S1                 373
-link_s1_s2          74
+link_s1_s2          96
 S2                 356
 link_s2_s3         144
 S3                 220
@@ -17,7 +17,7 @@ W2                 150
 
 Worst case over the workspace (1500 random poses + horizontal poses):
 joint torque N*m   cord N  knob N  bearing N   pose (S1..W2)
-S1         10.36      267    34.4        270   [90.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+S1         10.38      267    34.5        271   [90.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 S2          7.00      187    24.1        243   [0.0, 90.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 S3          2.75      118    15.2        212   [68.0, 70.0, -70.0, 94.0, 1.0, 2.0, -11.0]
 E           2.79       97    12.6        135   [90.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -26,7 +26,7 @@ W1          0.80       60     7.8         66   [90.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
 W2          0.31       36     4.6         40   [0.0, 90.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 element         bend N*m  stress MPa  bolt N
-S1                 10.36                  56
+S1                 10.38                  56
 link_s1_s2          8.74         0.6      48
 S2                  8.30                  45
 link_s2_s3          5.92         0.4      32

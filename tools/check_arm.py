@@ -155,10 +155,73 @@ def check_tensions():
     return True
 
 
+def _balance_hits(q, statics, min_vol=0.5):
+    """Balance parts (posed for q) against the arm (posed), the torso + cranks and each other."""
+    arm = A.arm_solids(q)
+    bal = A.balance_parts(q)
+    hits = []
+    for bn, bw in bal.items():
+        cord = "cord" in bn
+        for an, aw in arm.items():
+            if cord and an == A.BALANCE_YOKE_ON:      # the cord starts on the yoke pin
+                continue
+            if bb_overlap(bw, aw) and (v := vol(bw, aw)) > min_vol:
+                hits.append((bn, an, round(v, 1)))
+        for sn, sw in statics.items():
+            if bb_overlap(bw, sw) and (v := vol(bw, sw)) > min_vol:
+                hits.append((bn, sn, round(v, 1)))
+    skip = {("sheave", "cord"), ("cordback", "spring")}
+    for (a, aw), (b, bw) in itertools.combinations(bal.items(), 2):
+        ka, kb = a.split("_")[1], b.split("_")[1]
+        if a[-1] != b[-1] or (ka, kb) in skip or (kb, ka) in skip:
+            continue
+        if bb_overlap(aw, bw) and (v := vol(aw, bw)) > min_vol:
+            hits.append((a, b, round(v, 1)))
+    return hits
+
+
+def check_balance():
+    """Shoulder balance hardware: yoke (on link_s1_s2), masts, sheaves, cords, springs,
+    anchor posts vs the arm at the joint limits + combined poses, the beam, S1 base,
+    crank racks and crank modules. Plus the yoke's clearance at full abduction."""
+    from arm import balance as B
+    from arm import torso as T
+    print("== gravity balance hardware ==")
+    statics = {"torso_beam": T.shoulder_beam(A.joint_spec("S1")), **A.rack_solids()}
+    s1 = [(n, b) for n, _, b, _ in A.chain_frames({}) if n == "S1"][0][1]
+    from arm import hinge as H
+    statics["s1_base"] = A.place(H.base(A.joint_spec("S1")), s1)
+    poses = [{}] + [{j: a} for j in ("S1", "S2") for a in (A.joint_spec(j).lo, A.joint_spec(j).hi)]
+    poses += [{"S1": 60}, {"S1": 120, "S2": 100}, {"S1": -30, "S2": 100}, {"S1": 90, "S2": 100, "E": 115},
+              {"S2": 100, "S3": 80, "E": 90}, {"S2": 100, "S3": -80, "E": 90}, {"S2": 85, "S3": -80, "E": 115},
+              {"S1": 120, "S2": 60, "E": 90, "W1": 45}, {"S1": -30, "E": 115}]
+    # documented reach limit: hand folded back over the shoulder (S2 > ~90, S3 < ~-70, E > ~105
+    # together) touches the -X mast (the plain arm clears the beam there by ~37 mm)
+    limits = [{"S2": 100, "S3": -80, "E": 115}]
+    ok = True
+    for q in poses + limits:
+        h = _balance_hits(q, statics)
+        if q in limits:
+            print(f"  {q}: {'clear' if not h else 'KNOWN REACH LIMIT (hand vs mast, documented): ' + str(h)}")
+            continue
+        print(f"  {q}: {'clear' if not h else h}")
+        ok &= not h
+    # how close does the abducted upper arm come to the yoke tips?
+    for q in ({"S2": 100}, {"S2": 100, "S3": 80, "E": 115}, {"S2": 100, "S3": -80, "E": 115}):
+        arm = A.arm_solids(q)
+        yoke = arm.pop(A.BALANCE_YOKE_ON).val()
+        d = min(yoke.distance(w.val()) for n, w in arm.items()
+                if A.CHAIN[[c[0] for c in A.CHAIN].index(owner(n))][0] not in ("S1", "link_s1_s2")
+                and not n.startswith("s2_base"))
+        print(f"  yoke clearance to the abducted arm at {q}: {d:.1f} mm")
+        ok &= d > 2.0
+    return ok
+
+
 if __name__ == "__main__":
-    which = sys.argv[1:] or ["tubes", "tensions", "ranges", "combos", "cranks"]
+    which = sys.argv[1:] or ["tubes", "tensions", "ranges", "combos", "cranks", "balance"]
     res = {}
     for w in which:
         res[w] = {"ranges": check_ranges, "combos": check_combos, "cranks": check_cranks,
-                  "tubes": check_tubes, "tensions": check_tensions}[w]()
+                  "tubes": check_tubes, "tensions": check_tensions, "balance": check_balance}[w]()
     print("\nRESULT:", {k: ("PASS" if v else "FAIL") for k, v in res.items()})

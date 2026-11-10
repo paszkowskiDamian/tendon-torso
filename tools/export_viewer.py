@@ -89,12 +89,21 @@ def export_arm():
     for k, w in A.crank_parts().items():
         dump(w, "arm_" + k, 0.4 if k == "crank_spool" else 0.15, 0.8 if k == "crank_spool" else 0.3)
     dump(T.shoulder_beam(A.S1), "arm_torso_beam", 0.2, 0.3)
+    from arm import balance as BL
+    bal = A.balance_parts(None, cords=False)
+    meta_bal = []
+    for k, w in bal.items():
+        dump(w, "arm_bal_" + k, 0.2, 0.3)
+        meta_bal.append("arm_bal_" + k)
     dump(T.crank_rack(3), "arm_crank_rack", 0.2, 0.3)
     meta = {
         "world": A.WORLD.tolist(),
         "chain": chain,
         "cranks": {j: {"m": m.tolist(), "ratio": A.crank_ratio(j)} for j, m in A.crank_frames().items()},
         "racks": [[x, y] for x, y in A.RACK_CENTRES],
+        "balance": meta_bal,
+        "balance_geo": {"x_s": BL.X_S, "b_z": BL.B_Z, "c_y": BL.C_Y, "c_z": BL.C_Z, "r": BL.R_SHEAVE,
+                        "z_line": BL.Z_LINE, "y_fair": BL.Y_FAIRLEAD, "yoke": A.BALANCE_YOKE_ON},
         "crank": {"r": C.R_SPOOL, "sock_x": C.SOCK_X, "sock_b": C.SOCK_B, "block_z": C.BLOCK_Z[0], "beam_z": C.BEAM_Z[1]},
         "beam": {"y0": T.BEAM_Y[0], "y1": T.BEAM_Y[1], "h": T.BEAM_H, "s1_y": T.S1_Y},
     }

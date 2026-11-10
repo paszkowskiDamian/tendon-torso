@@ -1,5 +1,57 @@
 [
  {
+  "file": "balance_mast_l.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   55.9,
+   42.0,
+   76.0
+  ],
+  "worst_bridge_span": 4.8,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "balance_mast_r.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   55.9,
+   42.0,
+   76.0
+  ],
+  "worst_bridge_span": 4.8,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "balance_post.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   40.0,
+   62.0,
+   66.0
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0028,
+  "pass": true
+ },
+ {
+  "file": "balance_sheave.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   25.0,
+   25.0,
+   8.8
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0013,
+  "pass": true
+ },
+ {
   "file": "crank_arm.stl",
   "problems": [],
   "notes": [],
@@ -21,8 +73,8 @@
    80.0,
    132.0
   ],
-  "worst_bridge_span": 5.3,
-  "thin_wall_fraction": 0.0042,
+  "worst_bridge_span": 4.5,
+  "thin_wall_fraction": 0.0027,
   "pass": true
  },
  {
@@ -65,16 +117,29 @@
   "pass": true
  },
  {
-  "file": "crank_socket_block.stl",
+  "file": "crank_socket_block_a.stl",
   "problems": [],
   "notes": [],
   "size": [
    32.4,
-   26.0,
-   10.0
+   13.7,
+   21.5
   ],
   "worst_bridge_span": 1.8,
-  "thin_wall_fraction": 0.0,
+  "thin_wall_fraction": 0.0063,
+  "pass": true
+ },
+ {
+  "file": "crank_socket_block_b.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   32.4,
+   13.7,
+   21.5
+  ],
+  "worst_bridge_span": 1.8,
+  "thin_wall_fraction": 0.004,
   "pass": true
  },
  {
@@ -88,6 +153,19 @@
   ],
   "worst_bridge_span": 0.0,
   "thin_wall_fraction": 0.006,
+  "pass": true
+ },
+ {
+  "file": "crank_tube_clip.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   21.3,
+   26.0,
+   18.0
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0,
   "pass": true
  },
  {
@@ -169,6 +247,19 @@
   "pass": true
  },
  {
+  "file": "fitting_cord_thimble.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   15.0,
+   23.5,
+   5.0
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0048,
+  "pass": true
+ },
+ {
   "file": "idler_tyre.stl",
   "problems": [],
   "notes": [],
@@ -212,12 +303,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   104.0,
+   184.0,
    104.0,
    22.0
   ],
-  "worst_bridge_span": 2.5,
-  "thin_wall_fraction": 0.0013,
+  "worst_bridge_span": 2.6,
+  "thin_wall_fraction": 0.0005,
   "pass": true
  },
  {
@@ -400,6 +491,19 @@
   ],
   "worst_bridge_span": 3.0,
   "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "torso_tube_comb.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   91.6,
+   40.0,
+   19.0
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0075,
   "pass": true
  },
  {

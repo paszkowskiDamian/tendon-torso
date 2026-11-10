@@ -45,6 +45,11 @@ def shoulder_beam(s1):
     for xx, yy in SCREWS_XY:
         cuts.append(cyl_z(2.4, -1, WALL + 1).translate((xx, yy, 0)))
         cuts.append(cyl_z(4.5, WALL - 2.5, WALL + 1).translate((xx, yy, 0)))
+    # M4 bolts for the two balance-spring masts (arm/balance.py), through both side walls
+    from . import balance as B
+    for yy, zz in B.mast_bolt_points():
+        cuts.append(box(-x - 1, x + 1, yy - P.M4_CLR / 2, yy + P.M4_CLR / 2, zz - P.M4_CLR / 2, zz + P.M4_CLR / 2)
+                    .intersect(box(-x - 1, x + 1, -400, 400, -400, 400)))
     return cut_all(body, cuts)
 
 

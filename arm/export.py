@@ -13,7 +13,8 @@ from . import hinge as H
 from . import link as L
 from . import roll as R
 from . import torso as T
-from .assembly import CHAIN, link_length
+from . import balance as BAL
+from .assembly import BALANCE_YOKE_ON, CHAIN, balance_yoke_link, link_length
 from .specs import E, F, S1, S2, S3, W1, W2
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,7 +52,10 @@ def parts():
         out[f"{k}_retainer"] = (R.retainer(s), 1, f"{s.name} bearing retainer")
     out["idler_tyre"] = (R.idler_tyre(), 4, "idler tyre for a 623 bearing (2 per roll joint)")
     for name, spec, _ in CHAIN:
-        if isinstance(spec, tuple):
+        if name == BALANCE_YOKE_ON:
+            out[name] = (balance_yoke_link(), 1,
+                         f"link {spec[0]}->{spec[1]}, {spec[2]:.0f} mm + balance yoke arms - bottom lip down, arms flat on the bed")
+        elif isinstance(spec, tuple):
             out[name] = (L.link(spec[0], spec[1], link_length(name, spec)), 1,
                          f"link {spec[0]}->{spec[1]}, {link_length(name, spec):.0f} mm - bottom lip down, 48 deg cone under the top lip")
     out["crank_frame"] = (C.frame(), 7, "crank frame - foot down (teardrop bearing holes, 48 deg roof under the beam)")
@@ -67,6 +71,7 @@ def parts():
     out["torso_crank_rack"] = (T.crank_rack(3), 3, "crank rack (3 cranks each)")
     out["torso_tube_comb"] = (T.tube_comb(), 2, "labelled tube comb, snaps into the beam windows at y=33 and y=60 - plate down, labels up")
     out["fitting_cord_thimble"] = (FT.cord_thimble(), 4, "cord thimble (cord to spring hook / eye) - flat")
+    out.update(BAL.printed_parts())
     return out
 
 

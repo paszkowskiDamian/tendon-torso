@@ -59,11 +59,74 @@ crank ×7 ──PTFE tubes──► shoulder beam ──► S1 ─ S2 ─ link �
   * a crank arm with a **lock pin** that indexes every 10° on a ring of holes;
   * two **socket blocks** (A and B), one per cord, each pulled up by its own M4 screw (10 mm travel), so each cord's length and pretension is set on its own;
   * a **tube clip** on top, held by the two tension screw heads, that guides both tubes out vertically.
+* **Shoulder balance** (`balance.py`): two springs on cords from a yoke on `link_s1_s2` over sheaves on the beam; see below.
 * **Torso** (`torso.py`):
   * a U-channel shoulder beam that screws onto the table and overhangs its edge, with S1 bolted underneath;
   * crank racks for 3 cranks each;
   * two snap-in **tube combs** that hold the 14 tubes in a labelled grid (S1 … W2 × A/B) inside the channel.
 * **Fittings** (`fittings.py`): a cord thimble to join Dyneema to a spring hook or an eye.
+
+## Gravity balance springs (`balance.py`)
+
+Two springs take most of the arm's weight off S1, so the S1 crank (and later its motor) works much less.
+
+**How it works (zero-free-length balancing).** Each side has a Dyneema cord. It starts at a pin **B** on the arm, b = 81 mm below the S1 axis, and runs over a sheave **A**, a = 113 mm straight above the axis. From there it goes back along the beam to an extension spring. The spring pulls with F = k·|AB| (it behaves as a zero-length spring; see below). Then its moment about S1 is k·a·b·sin(S1), and the arm's weight moment is m·g·d·sin(S1). Both follow the same sine, so one setting balances the arm at every flexion angle. The two cords run in the side planes x = ±85 mm, outside the beam and the S1 base. They are symmetric, so the S1 bearings see no twist.
+
+* **Yoke:** `link_s1_s2` has two flat arms out to x = ±85 mm. Its flanges and its 22 mm length are unchanged, so the kinematics stay the same. Each arm ends in a fork with an M3 pin, and the cord is tied in a loop around the pin. The loop pivots, so the cord line always passes through the pin centre. The arm tips slope down towards S2, which leaves room for the upper arm at full abduction (S2 = 100°).
+* **Masts (`balance_mast_l/_r`):**
+  * Each mast hooks over its beam side wall: a top cap, an inner lip and a front lip around the beam's front end.
+  * Fix it with 2× M4 through the wall. Drill Ø4.5 through the beam wall, using the mast as the jig. The nuts go inside the channel.
+  * It carries the sheave on two 623s and an M3 axle. The sheave centre sits 10 mm behind the S1 axis, so the hanging cord passes exactly over the axis.
+  * A fairlead at the back sends the cord backwards at z = 54 mm.
+* **Springs + anchor posts (`balance_post` ×2):**
+  * The springs run 1:1 (no tackle) along x = ±85 mm, beside the beam and the crank racks. The racks moved to x = 220 to make room.
+  * Each spring hooks onto an **M5 eye bolt** through a post that is screwed to the table at y ≈ 290–340 mm.
+  * The two nuts on the eye bolt tune the spring offset by ±20 mm.
+
+**Balance level.** The mass model is in `balance.py`. It takes the CAD volumes of every printed part. A 1.8 mm solid skin (4 walls) plus 40% infill gives an effective fill of 0.58. Bearings, M8 axles, inserts, bolts and the PTFE tubes are added as point masses.
+
+| | |
+|---|---|
+| Mass moving with S1 | 2.00 kg (1.39 kg PETG + 0.61 kg hardware) |
+| COM below S1, arm straight | 389 mm, so m·g·d = **7.6 N·m** (12.2 N·m with 0.5 kg in the hand) |
+| Effective lever, elbow bent 0/60/115° | 389 / 351 / 283 mm |
+
+A spring can only follow sin(S1). At full abduction (S2 = 100°) the arm's weight moment about S1 falls to about 2 N·m. So the spring level is the **minimax** over all S1 × S2 × E poses: k·a·b = 4.75 N·m for both sides together.
+
+**Result** (`tools/check_balance.py`, real sheave geometry):
+
+| | Without springs | With springs |
+|---|---|---|
+| Peak S1 holding torque (S1 × S2 × E ranges) | 7.6 N·m | **2.9 N·m (−62%)** |
+| Force on the S1 crank knob | 23.5 N | **8.9 N** |
+| With 0.5 kg payload | 12.2 N·m / 37 N | 7.4 N·m / 23 N |
+
+The springs don't act on S2: its peak stays 4.7 N·m.
+
+**Spring (one per side).**
+
+| Property | Value |
+|---|---|
+| Material | Music-wire extension spring |
+| Wire | Ø 1.4 mm |
+| OD | 15 mm |
+| Free length | 105 mm over the hooks |
+| Rate | k = 0.26 N/mm |
+| Active coils | about 60 |
+| Initial tension | ≤ 15 N |
+| Working load | 26–50 N |
+| Safe load | 63 N (45% of Rm in shear) |
+| Extension in use | 90–185 mm |
+
+* **Where to buy:** RS PRO 751938 is listed as 1.4 mm wire, 15 mm OD, 105 mm, 0.26 N/mm. Check its initial tension and maximum extended length (≥ 300 mm) on the datasheet before you buy it. Any catalogue spring with the same rate, OD and free length works.
+* **Initial tension does not spoil the balance.** The spring pulls with Fi + k·e. Moving the anchor by Fi/k makes that equal k·|AB|, as long as the spring stays open over the whole range. That needs Fi < k·|AB|min ≈ 26 N.
+* **No 2:1 tackle.** With a 1:1 run the cord pull stays at ≤ 50 N and the parts stay simple. The 185 mm extension fits along the table. A 2:1 tackle would halve the stroke but double the spring load and add a moving pulley.
+
+**Fitting and tuning.**
+1. Tie each cord to its yoke pin with a bowline loop.
+2. Run the cord up over the sheave, through the fairlead and back to the spring hook. The cord is about 0.41 m per side, including the knots.
+3. With the arm hanging, set the eye-bolt nuts so the spring is stretched by about 180 mm (spring length about 288 mm).
+4. Then fine-tune: the arm should hold still at S1 = 30° with the crank lock pin out.
 
 ## Printability (`tools/printability.py`)
 
@@ -90,6 +153,7 @@ Notable orientations:
 * Cords from each tube exit to its drum tangent and along the groove touch nothing, in every hinge and roll joint.
 * Crank arms of neighbouring modules never touch, and the knob clears the table.
 * Every joint's center passage is big enough for the tubes that pass through it (12 at S1, down to 2 at W1).
+* The balance hardware (yoke, masts, sheaves, cords, springs, posts) touches nothing at the S1/S2 limits and in combined poses. That includes the beam, the S1 base and the crank racks. The yoke keeps clear of the upper arm at full abduction. **Reach limit added by the balance:** with the hand folded back over the shoulder (S2 > 90°, S3 < −70° and E > 105° all together), the wrist touches the −X mast. Every other combination clears it.
 
 **Not verified (needs the printed arm):**
 * friction through the long tube runs;
@@ -136,7 +200,14 @@ Notable orientations:
 | 14 | M4×45 bolt + nut | crank tension screws (one per socket block) |
 | 28 | M4×12 bolt + nut | crank feet to racks |
 | 7 | M4×30 bolt + nut | crank knobs |
-| ~20 | 4×30 wood screws | beam and racks to the table |
+| ~28 | 4×30 wood screws | beam, racks and balance posts to the table |
+| 2 | Extension spring, music wire 1.4 × OD 15 × 105 mm, 0.26 N/mm (e.g. RS PRO 751938) | shoulder balance |
+| 4 | 623ZZ (3×10×4) | balance sheaves (2 each) |
+| 2 | M3×20 bolt (axle, self-taps into the outer cheek) + 2 M3 washers each | balance sheaves |
+| 2 | M3×20 bolt + nut | balance cord pins in the yoke |
+| 4 | M4×20 bolt + nut + washer | balance masts through the beam walls (drill Ø4.5) |
+| 2 | M5×60 eye bolt + 2 M5 nuts + washers | balance spring anchors (±20 mm tuning) |
+| ~1 m | 1 mm Dyneema (from the spool) | balance cords, ~0.41 m each |
 | **~17 m** | **PTFE tube 2 mm ID × 4 mm OD** | 2 per joint, ~0.55 m (S1) to ~1.6 m (W2) |
 | **~25 m** | **1 mm Dyneema** (buy a 50 m spool) | 2 cords per joint, ~1.25 m (S1) to ~2.2 m (W2) |
 
