@@ -11,6 +11,7 @@ We build it up one joint at a time.
 | Part | Status |
 |---|---|
 | [J1: 1-DOF tendon hinge test rig](joints/j1-hinge/) | designed, STL ready, **not printed/tested yet** |
+| [J1-S: NEMA17, 6:1 tendon reduction, Bowden-ready center](joints/j1s-hinge/) | designed, STL ready, **not printed/tested yet** |
 | J1b: two stacked joints, motors remote | next |
 | Gripper, shoulder, full arm, torso | see [roadmap](docs/roadmap.md) |
 
@@ -23,8 +24,10 @@ An animated 3D assembly showing how the tendons wind is in [`docs/viewer/`](docs
 ```
 docs/research.md      existing open designs + why J1 looks the way it does
 docs/roadmap.md       path to the torso, the tendon-routing problem
-joints/j1-hinge/      parametric CadQuery source, STL/STEP, build guide
-tools/render.py       preview renders + range-of-motion collision check
+joints/j1-hinge/      J1 (servo, 1:1): CadQuery source, STL/STEP, build guide
+joints/j1s-hinge/     J1-S (stepper, 6:1, Bowden center)
+joints/common/        shared CAD helpers
+tools/                preview renders + collision / clearance checks
 ```
 
 ## Building the CAD
