@@ -13,7 +13,7 @@ E = HingeSpec("E", "S", R=36.0, cav=8.0, lo=0, hi=115, lug_r=12, lug_t=10, slot_
               bearing=P.B625, axle="M5")
 W1 = HingeSpec("W1", "S", R=20.0, cav=5.0, lo=-60, hi=60, lug_r=10, lug_t=9, slot_y=6.5, tubes_through=3,
                bearing=P.B625, axle="M5")
-W2 = HingeSpec("W2", "S", R=20.0, cav=4.0, lo=-30, hi=30, lug_r=10, lug_t=9, slot_y=4, tubes_through=1,
+W2 = HingeSpec("W2", "S", R=20.0, cav=4.0, lo=-90, hi=90, lug_r=10, lug_t=9, slot_y=4, tubes_through=1,
                bearing=P.B625, axle="M5")
 HINGES = [S1, S2, E, W1, W2]
 
