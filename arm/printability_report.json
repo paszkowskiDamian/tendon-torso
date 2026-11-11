@@ -31,11 +31,11 @@
   "notes": [],
   "size": [
    40.0,
-   62.0,
+   72.0,
    66.0
   ],
   "worst_bridge_span": 0.0,
-  "thin_wall_fraction": 0.0028,
+  "thin_wall_fraction": 0.0027,
   "pass": true
  },
  {
@@ -52,59 +52,124 @@
   "pass": true
  },
  {
-  "file": "crank_arm.stl",
+  "file": "drive_adapter_dmj4310.stl",
   "problems": [],
   "notes": [],
   "size": [
-   82.0,
-   26.0,
-   10.5
-  ],
-  "worst_bridge_span": 2.6,
-  "thin_wall_fraction": 0.0,
-  "pass": true
- },
- {
-  "file": "crank_frame.stl",
-  "problems": [],
-  "notes": [],
-  "size": [
-   51.0,
-   80.0,
-   132.0
-  ],
-  "worst_bridge_span": 4.5,
-  "thin_wall_fraction": 0.0027,
-  "pass": true
- },
- {
-  "file": "crank_knob.stl",
-  "problems": [],
-  "notes": [],
-  "size": [
-   14.0,
-   14.0,
-   26.0
+   57.2,
+   57.2,
+   6.0
   ],
   "worst_bridge_span": 0.0,
   "thin_wall_fraction": 0.0,
   "pass": true
  },
  {
-  "file": "crank_lock_pin.stl",
+  "file": "drive_adapter_sts3095.stl",
   "problems": [],
   "notes": [],
   "size": [
-   12.0,
-   12.0,
-   18.0
+   36.0,
+   36.0,
+   6.0
   ],
-  "worst_bridge_span": 4.0,
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.006,
+  "pass": true
+ },
+ {
+  "file": "drive_adapter_sts3215.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   36.0,
+   36.0,
+   6.0
+  ],
+  "worst_bridge_span": 3.2,
   "thin_wall_fraction": 0.0,
   "pass": true
  },
  {
-  "file": "crank_nut_cup.stl",
+  "file": "drive_adapter_sts3250.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   36.0,
+   36.0,
+   6.0
+  ],
+  "worst_bridge_span": 3.2,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "drive_cup_dmj4310.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   62.0,
+   62.0,
+   63.8
+  ],
+  "worst_bridge_span": 1.6,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "drive_cup_sts3095.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   82.4,
+   55.0,
+   69.8
+  ],
+  "worst_bridge_span": 1.6,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "drive_cup_sts3215.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   67.4,
+   55.0,
+   52.4
+  ],
+  "worst_bridge_span": 1.6,
+  "thin_wall_fraction": 0.0072,
+  "pass": true
+ },
+ {
+  "file": "drive_cup_sts3250.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   67.4,
+   55.0,
+   52.4
+  ],
+  "worst_bridge_span": 1.6,
+  "thin_wall_fraction": 0.0072,
+  "pass": true
+ },
+ {
+  "file": "drive_frame.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   51.0,
+   58.0,
+   88.0
+  ],
+  "worst_bridge_span": 4.0,
+  "thin_wall_fraction": 0.0002,
+  "pass": true
+ },
+ {
+  "file": "drive_nut_cup.stl",
   "problems": [],
   "notes": [],
   "size": [
@@ -117,7 +182,7 @@
   "pass": true
  },
  {
-  "file": "crank_socket_block_a.stl",
+  "file": "drive_socket_block_a.stl",
   "problems": [],
   "notes": [],
   "size": [
@@ -130,7 +195,7 @@
   "pass": true
  },
  {
-  "file": "crank_socket_block_b.stl",
+  "file": "drive_socket_block_b.stl",
   "problems": [],
   "notes": [],
   "size": [
@@ -143,20 +208,20 @@
   "pass": true
  },
  {
-  "file": "crank_spool.stl",
+  "file": "drive_spool.stl",
   "problems": [],
   "notes": [],
   "size": [
-   20.6,
-   20.6,
-   33.0
+   36.0,
+   36.0,
+   49.5
   ],
-  "worst_bridge_span": 0.0,
-  "thin_wall_fraction": 0.006,
+  "worst_bridge_span": 5.5,
+  "thin_wall_fraction": 0.0007,
   "pass": true
  },
  {
-  "file": "crank_tube_clip.stl",
+  "file": "drive_tube_clip.stl",
   "problems": [],
   "notes": [],
   "size": [
@@ -520,16 +585,55 @@
   "pass": true
  },
  {
-  "file": "torso_crank_rack.stl",
+  "file": "torso_electronics_tray.stl",
   "problems": [],
   "notes": [],
   "size": [
-   216.0,
-   96.0,
-   5.0
+   150.0,
+   220.0,
+   12.0
   ],
-  "worst_bridge_span": 1.4,
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0002,
+  "pass": true
+ },
+ {
+  "file": "torso_estop_box.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   56.0,
+   60.0,
+   60.0
+  ],
+  "worst_bridge_span": 0.0,
   "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "torso_s1_hanger.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   68.0,
+   142.0,
+   63.0
+  ],
+  "worst_bridge_span": 2.2,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "torso_saddle.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   128.0,
+   142.0,
+   56.7
+  ],
+  "worst_bridge_span": 0.0,
+  "thin_wall_fraction": 0.0025,
   "pass": true
  },
  {
@@ -537,25 +641,25 @@
   "problems": [],
   "notes": [],
   "size": [
-   100.0,
-   240.0,
+   190.0,
+   140.0,
    52.0
   ],
-  "worst_bridge_span": 3.0,
-  "thin_wall_fraction": 0.0,
+  "worst_bridge_span": 5.5,
+  "thin_wall_fraction": 0.0003,
   "pass": true
  },
  {
-  "file": "torso_tube_comb.stl",
+  "file": "torso_shoulder_comb.stl",
   "problems": [],
   "notes": [],
   "size": [
-   91.6,
-   40.0,
-   19.0
+   78.0,
+   20.0,
+   30.0
   ],
-  "worst_bridge_span": 0.0,
-  "thin_wall_fraction": 0.0075,
+  "worst_bridge_span": 3.1,
+  "thin_wall_fraction": 0.0,
   "pass": true
  },
  {

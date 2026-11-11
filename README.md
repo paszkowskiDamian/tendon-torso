@@ -13,7 +13,7 @@ We build it up one joint at a time.
 | [J1: 1-DOF tendon hinge test rig](joints/j1-hinge/) | designed, STL ready, **not printed/tested yet** |
 | [J1-S: NEMA17, 6:1 tendon reduction, Bowden-ready center](joints/j1s-hinge/) | designed, STL ready, **not printed/tested yet** |
 | [J1b: 2-DOF, J1-S elbow + J2 wrist, both motors remote (J2 via Bowden)](joints/j1b-2dof/) | designed, STL ready, **not printed/tested yet** |
-| [**Arm: 7 DOF + gripper, hand-cranked**](arm/), shoulder (3), elbow, forearm twist, wrist (2), two-finger gripper on one cord | designed, all 49 parts print-ready and CAD-checked, **not printed yet** |
+| [**Two 7-DOF arms + grippers on a torso**](arm/), shoulder (3), elbow, forearm twist, wrist (2), two-finger gripper on one cord; 16 servo drive units in the torso column | designed, all 57 part files print-ready and CAD-checked, **not printed yet** |
 | Second arm, motors | see [roadmap](docs/roadmap.md) |
 
 ## Interactive viewer
@@ -29,7 +29,7 @@ joints/j1-hinge/      J1 (servo, 1:1): CadQuery source, STL/STEP, build guide
 joints/j1s-hinge/     J1-S (stepper, 6:1, Bowden center)
 joints/j1b-2dof/      J1b: J1-S + J2 wrist module + Bowden drive module
 joints/common/        shared CAD helpers
-arm/                  the full 7-DOF arm + gripper: modules, links, gripper, cranks, torso, STLs, build guide
+arm/                  the two 7-DOF arms + grippers: modules, links, gripper, drive units, torso, STLs, build guide
 arm/kinematics.py     forward + inverse kinematics (python -m arm.ik X Y Z), see docs/kinematics.md
 tools/                preview renders + collision / clearance checks
 ```

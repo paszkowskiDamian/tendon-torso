@@ -382,8 +382,8 @@ def sheave():
 
 
 def post():
-    """Spring anchor post (WORLD, side +X; mirrored for -X, it is symmetric so one
-    STL serves both): foot with 4 wood screws, column with a horizontal M5 hole at
+    """Spring anchor post (BEAM frame, side +X; mirrored for -X, it is symmetric so one
+    STL serves both): foot with 2 M5 into the torso deck rail under it (torso.py), column with a horizontal M5 hole at
     the cord height for the eye bolt (2 nuts: +-20 mm tuning), gusset behind.
     Prints foot down."""
     y0, y1 = POST_Y
@@ -393,9 +393,9 @@ def post():
            .polyline([(y1 - 1, 5), (y1 + 28, 5), (y1 - 1, Z_LINE + 4)]).close().extrude(8))
     body = foot.union(col).union(rib)
     body = body.cut(_teardrop_y(2.8, y0 - 1, y1 + 1, X_S, Z_LINE))
-    for dx in (-13.0, 13.0):
-        for y in (y0 - 4, y1 + 24):
-            body = body.cut(cyl_z(2.4, -1, 7).translate((X_S + dx, y, 0)))
+    body = body.union(box(X_S - 10, X_S + 10, y1 + 25, y1 + 40, 0, 6))
+    for y in (y0 - 4, y1 + 34):                # 2 M5 into T-nuts in the 2020 deck rail under it (x = X_S)
+        body = body.cut(cyl_z(2.75, -1, 7).translate((X_S, y, 0)))
     return body
 
 

@@ -8,6 +8,7 @@ from pathlib import Path
 import cadquery as cq
 
 from . import crank as C
+from . import drive as DR
 from . import fittings as FT
 from . import gripper as GR
 from . import hinge as H
@@ -21,6 +22,7 @@ from .specs import E, F, S1, S2, S3, W1, W2
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "arm" / "stl"
 BED = 250.0
+MIRROR_NOTE = "; x2: right arm as exported, left arm mirrored (slicer: mirror X)"
 
 
 def lay(wp):
@@ -59,22 +61,22 @@ def parts():
         elif isinstance(spec, tuple):
             out[name] = (L.link(spec[0], spec[1], link_length(name, spec)), 1,
                          f"link {spec[0]}->{spec[1]}, {link_length(name, spec):.0f} mm - bottom lip down, 48 deg cone under the top lip")
-    # 8 cranks: S1..W2 + the gripper (one cord: socket block A only)
-    out["crank_frame"] = (C.frame(), 8, "crank frame - foot down (teardrop bearing holes, 48 deg roof under the beam)")
-    out["crank_spool"] = (rotY(C.spool(), -90), 8, "crank spool - standing on its small -X boss, 0.12 mm layers, brim")
-    out["crank_socket_block_a"] = (C.socket_block_a(), 8, "socket / tension block for cord A (1 M4x45 + nut) - nut trap down")
-    out["crank_socket_block_b"] = (C.socket_block_b(), 7, "socket / tension block for cord B (1 M4x45 + nut), not on the gripper crank - nut trap down")
-    out["crank_tube_clip"] = (C.tube_clip(), 8, "tube clip on the crank top, under both tension screw heads - plate down")
-    out["crank_arm"] = (rotY(C.crank_arm(), 90), 8, "crank arm - flat")
-    out["crank_nut_cup"] = (rotY(C.nut_cup(), -90), 8, "M8 nut cup - nut pocket down")
-    out["crank_lock_pin"] = (C.lock_pin(), 8, "lock pin - head up")
-    out["crank_knob"] = (C.knob(), 8, "crank knob")
-    out["torso_shoulder_beam"] = (T.shoulder_beam(S1), 1, "shoulder beam - floor down, 6 walls")
-    out["torso_crank_rack"] = (T.crank_rack(3), 3, "crank rack (3 cranks each)")
-    out["torso_tube_comb"] = (T.tube_comb(), 2, "labelled tube comb, snaps into the beam windows at y=33 and y=60 - plate down, labels up")
-    out["fitting_cord_thimble"] = (FT.cord_thimble(), 4, "cord thimble (cord to spring hook / eye) - flat")
-    out.update(BAL.printed_parts())
-    out.update(GR.printed_parts())
+    # both arms: the left arm is the mirror image of the right one
+    for k in list(out):
+        wp, q, note = out[k]
+        out[k] = (wp, 2 * q, note + MIRROR_NOTE)
+    out["fitting_cord_thimble"] = (FT.cord_thimble(), 8, "cord thimble (cord to spring hook / eye) - flat")
+    for k, (wp, q, note) in BAL.printed_parts().items():
+        out[k] = (wp, 2 * q, note + " (x2: one set per arm)")
+    for k, (wp, q, note) in GR.printed_parts().items():
+        out[k] = (wp, 2 * q, note + MIRROR_NOTE)
+    # 16 drive units (drive.py): the crank's socket blocks, tube clip and nut cup + new frame/spool/motor parts
+    out["drive_socket_block_a"] = (C.socket_block_a(), 16, "socket / tension block for cord A (1 M4x45 + nut) - nut trap down")
+    out["drive_socket_block_b"] = (C.socket_block_b(), 14, "socket / tension block for cord B (1 M4x45 + nut), not on the gripper units - nut trap down")
+    out["drive_tube_clip"] = (C.tube_clip(), 16, "tube clip on the drive frame top, under both tension screw heads - plate down")
+    out["drive_nut_cup"] = (rotY(C.nut_cup(), -90), 16, "M8 nut cup (wall A side of the spool shaft) - nut pocket down")
+    out.update(DR.printed_parts())
+    out.update(T.printed_parts())
     return out
 
 
