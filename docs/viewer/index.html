@@ -127,6 +127,8 @@ a { color: var(--accent); }
         <label><input type="checkbox" id="xray" checked> X-ray links</label>
         <label><input type="checkbox" id="pass" checked> <span id="passLbl">Pass-through cord</span></label>
         <label id="halfWrap"><input type="checkbox" id="hideDist"> Hide one half of each link</label>
+        <label id="cutWrap" hidden><input type="checkbox" id="cut"> Cutaway roll joints (bearings + retainer)
+          <button type="button" id="goS3">Zoom S3</button><button type="button" id="goF">Zoom F</button></label>
       </div>
     </div>
 
@@ -204,6 +206,7 @@ a { color: var(--accent); }
   const canvas = $('c'), stage = $('stage');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.localClippingEnabled = true;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(35, 1, 1, 8000);
   camera.up.set(0, 0, 1);
@@ -381,8 +384,29 @@ a { color: var(--accent); }
     fetch('models/arm_chain.json').then(r => { if (!r.ok) throw new Error('arm_chain.json: HTTP ' + r.status); return r.json(); })
       .then(d => (ARM = d));
 
+  // ball bearing (d, D, B) with its lower face at z0, on the Z axis
+  function bearingMesh(d, D, B, z0, plane) {
+    const g = new THREE.Group(); g.position.z = z0; g.userData.clip = plane;
+    const steel = new THREE.MeshStandardMaterial({ color: 0xc9ced4, roughness: 0.35, metalness: 0.6, side: THREE.DoubleSide });
+    const ri = d / 2, ro = D / 2, w = (ro - ri), t = w * 0.3;
+    const ring = (a, b) => {
+      const pts = [[a, 0], [b, 0], [b, B], [a, B], [a, 0]].map(([r, z]) => new THREE.Vector2(r, z));
+      const geo = new THREE.LatheGeometry(pts, 64); geo.rotateX(Math.PI / 2);
+      return new THREE.Mesh(geo, steel);
+    };
+    g.add(ring(ri, ri + t), ring(ro - t, ro));
+    const rm = (ri + ro) / 2, rb = w * 0.24, n = Math.floor(2 * Math.PI * rm / (2.6 * rb));
+    const ballGeo = new THREE.SphereGeometry(rb, 12, 8);
+    for (let k = 0; k < n; k++) {
+      const a = 2 * Math.PI * k / n, ball = new THREE.Mesh(ballGeo, steel);
+      ball.position.set(rm * Math.cos(a), rm * Math.sin(a), B / 2); g.add(ball);
+    }
+    return g;
+  }
+
   function buildArm(root) {
     const D = ARM;
+    const rollCut = [];
     const m4 = rows => { const m = new THREE.Matrix4(); m.set(...rows.flat()); return m; };
     const fixed = (parent, mat) => { const g = new THREE.Group(); g.matrixAutoUpdate = false; g.matrix.copy(mat); parent.add(g); return g; };
     const parts = [];
@@ -412,6 +436,13 @@ a { color: var(--accent); }
       e.moving.forEach(n => parts.push([n, colorOf(n), mv, false, n.endsWith('_b') ? 'half' : null]));
       const nxt = new THREE.Group(); nxt.position.z = e.out_z; mv.add(nxt);
       e.inner = inner; e.mv = mv; e.idx = idx;
+      if (e.kind === 'roll') {
+        // cutaway: one clipping plane through the roll axis for the stator, rotor, retainer and bearings
+        const plane = new THREE.Plane();
+        inner.userData.clip = plane; mv.userData.clip = plane; e.clip = plane;
+        (e.bearings || []).forEach(b => inner.add(bearingMesh(...b, plane)));
+        rollCut.push(e);
+      }
       if (e.kind !== 'link') J[e.name] = e;
       out = nxt;
     });
@@ -809,7 +840,7 @@ a { color: var(--accent); }
     return {
       title: 'Tendon Arm, 7 DOF',
       sub: 'Printable CAD from the arm/ folder: 5 hinge modules, 2 roll modules, 6 links, 7 hand cranks. Every joint is driven by a pair of 1 mm Dyneema cords in PTFE tubes.',
-      pass: 'Bowden tubes and cords', parts, cam: { target: [60, -120, -330], dist: 2700 }, noHalf: false,
+      pass: 'Bowden tubes and cords', parts, cam: { target: [60, -120, -330], dist: 2700 }, noHalf: false, cut: rollCut,
       joints: KEYS.map(k => ({ label: J[k].label, badge: k === 'S1' ? 'shoulder' : k === 'E' ? 'elbow' : null,
         min: J[k].lo, max: J[k].hi, anim: anims[k] })),
       set(v) {
@@ -860,7 +891,7 @@ a { color: var(--accent); }
     meshes = [];
     vals = rig.joints.map(() => 0);
     $('title').textContent = rig.title; $('subtitle').textContent = rig.sub; $('passLbl').textContent = rig.pass;
-    $('conceptTag').hidden = !rig.concept; $('halfWrap').hidden = !!rig.noHalf;
+    $('conceptTag').hidden = !rig.concept; $('halfWrap').hidden = !!rig.noHalf; $('cutWrap').hidden = !rig.cut;
     for (const k of Object.keys(RIGS)) {
       $('tab-' + k).toggleAttribute('aria-current', k === name);
       if (k === name) $('tab-' + k).setAttribute('aria-current', 'page');
@@ -888,7 +919,7 @@ a { color: var(--accent); }
           parent.add(m); meshes.push(m);
         });
         $('loading').hidden = true;
-        applyXray(); applyHalf(); apply();
+        applyXray(); applyHalf(); applyCut(); apply();
       }).catch(err => { $('loading').textContent = 'Could not load the parts (' + err.message + '). Reload to try again.'; });
     } else {
       $('loading').hidden = true;
@@ -911,6 +942,45 @@ a { color: var(--accent); }
       const mat = m.material; if (!mat || !mat.userData || !mat.userData.xray) return;
       mat.transparent = on; mat.opacity = on ? 0.3 : 1; mat.depthWrite = !on; mat.needsUpdate = true;
     });
+  }
+  // cutaway of the roll joints: every mesh under a group with a clip plane gets it
+  // direct parent only: the next elements of the chain hang under a roll's moving group too
+  function clipOf(o) { return (o.parent && o.parent.userData.clip) || null; }
+  function applyCut() {
+    const on = $('cut').checked && !!(rig && rig.cut);
+    rigRoot.traverse(o => {
+      if (!o.isMesh) return;
+      const pl = clipOf(o); if (!pl) return;
+      o.material.clippingPlanes = on ? [pl] : []; o.material.needsUpdate = true;
+    });
+  }
+  // plane through each roll axis, facing away from the camera: the near half is cut off
+  const _p = new THREE.Vector3(), _a = new THREE.Vector3(), _v = new THREE.Vector3();
+  function updateCut() {
+    if (!rig || !rig.cut || !$('cut').checked) return;
+    rig.cut.forEach(e => {
+      e.inner.updateWorldMatrix(true, false);
+      _p.setFromMatrixPosition(e.inner.matrixWorld);
+      _a.setFromMatrixColumn(e.inner.matrixWorld, 2).normalize();
+      _v.copy(camera.position).sub(_p); _v.addScaledVector(_a, -_v.dot(_a));
+      if (_v.lengthSq() < 1e-6) _v.set(1, 0, 0).cross(_a);
+      _v.normalize().negate();
+      e.clip.setFromNormalAndCoplanarPoint(_v, _p);
+    });
+  }
+  function zoomRoll(name) {
+    const e = rig && rig.cut && rig.cut.find(x => x.name === name); if (!e) return;
+    if (!$('cut').checked) { $('cut').checked = true; applyCut(); }
+    e.inner.updateWorldMatrix(true, false);
+    target.setFromMatrixPosition(e.inner.matrixWorld);
+    _a.setFromMatrixColumn(e.inner.matrixWorld, 2).normalize();
+    target.addScaledVector(_a, 20); dist = 300;
+    // look from the side (perpendicular to the roll axis), a little from above
+    const u = new THREE.Vector3(0, 0, 1).cross(_a);
+    if (u.lengthSq() < 1e-4) u.set(1, 0, 0);
+    u.normalize(); u.addScaledVector(new THREE.Vector3().crossVectors(_a, u), 0.35).normalize();
+    if (u.z < 0) u.negate();
+    theta = Math.atan2(u.y, u.x); phi = Math.asin(Math.max(-1, Math.min(1, u.z))); placeCamera();
   }
   function applyHalf() { const hide = $('hideDist').checked; meshes.forEach(m => { if (m.userData.tag === 'half') m.visible = !hide; }); }
 
@@ -976,6 +1046,9 @@ a { color: var(--accent); }
   };
   $('xray').onchange = applyXray;
   $('hideDist').onchange = applyHalf;
+  $('cut').onchange = applyCut;
+  $('goS3').onclick = e => { e.preventDefault(); zoomRoll('S3'); };
+  $('goF').onclick = e => { e.preventDefault(); zoomRoll('F'); };
   $('pass').onchange = e => rig && rig.togglePass(e.target.checked);
   const route = () => show((location.hash || '#j1').slice(1));
   addEventListener('hashchange', route);
@@ -991,6 +1064,7 @@ a { color: var(--accent); }
       apply();
     }
     if (rig && rig.frame) rig.frame();
+    updateCut();
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   }
