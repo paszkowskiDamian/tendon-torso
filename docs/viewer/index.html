@@ -127,6 +127,7 @@ a { color: var(--accent); }
         <label><input type="checkbox" id="xray" checked> X-ray links</label>
         <label><input type="checkbox" id="pass" checked> <span id="passLbl">Pass-through cord</span></label>
         <label id="halfWrap"><input type="checkbox" id="hideDist"> Hide one half of each link</label>
+        <label id="wsWrap" hidden><input type="checkbox" id="wsOn" checked> Recommended work area</label>
         <label id="cutWrap" hidden><input type="checkbox" id="cut"> Cutaway roll joints (bearings + retainer)
           <button type="button" id="goS3">Zoom S3</button><button type="button" id="goF">Zoom F</button></label>
       </div>
@@ -550,6 +551,18 @@ a { color: var(--accent); }
     const toolG = out;
     const SF = m4(D.shoulder), SFi = SF.clone().invert();
     const SF3i = new THREE.Matrix3().setFromMatrix4(SFi);
+
+    // ---------- recommended work area (tools/workspace_study.py), drawn in the shoulder frame
+    const wsG = new THREE.Group(); wsG.matrixAutoUpdate = false; wsG.matrix.copy(SF); root.add(wsG);
+    if (D.workspace) {
+      const b = D.workspace.box, w = b.x1 - b.x0, h = b.y1 - b.y0;
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: 0x2f9b5a, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+      pl.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, b.z); wsG.add(pl);
+      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(w, h)), new THREE.LineBasicMaterial({ color: 0x2f9b5a }));
+      edge.position.copy(pl.position); wsG.add(edge);
+      const sw = new THREE.Mesh(new THREE.SphereGeometry(8, 16, 12), new THREE.MeshBasicMaterial({ color: 0x2f9b5a }));
+      sw.position.set(...D.workspace.sweet); wsG.add(sw);
+    }
     const KJ = KEYS.map(k => J[k]);
     const LO = KJ.map(e => e.lo), HI = KJ.map(e => e.hi);
     const MID = LO.map((l, i) => (l + HI[i]) / 2), HALF = LO.map((l, i) => (HI[i] - l) / 2);
@@ -875,7 +888,7 @@ a { color: var(--accent); }
     return {
       title: 'Tendon Arm, 7 DOF',
       sub: 'Printable CAD from the arm/ folder: 5 hinge modules, 2 roll modules, 6 links, 7 hand cranks. Every joint is driven by a pair of 1 mm Dyneema cords in PTFE tubes.',
-      pass: 'Bowden tubes and cords', parts, cam: { target: [60, -120, -330], dist: 2700 }, noHalf: false, cut: rollCut,
+      pass: 'Bowden tubes and cords', parts, cam: { target: [60, -120, -330], dist: 2700 }, noHalf: false, cut: rollCut, ws: wsG,
       joints: KEYS.map(k => ({ label: J[k].label, badge: k === 'S1' ? 'shoulder' : k === 'E' ? 'elbow' : null,
         min: J[k].lo, max: J[k].hi, anim: anims[k] })),
       set(v) {
@@ -926,7 +939,8 @@ a { color: var(--accent); }
     meshes = [];
     vals = rig.joints.map(() => 0);
     $('title').textContent = rig.title; $('subtitle').textContent = rig.sub; $('passLbl').textContent = rig.pass;
-    $('conceptTag').hidden = !rig.concept; $('halfWrap').hidden = !!rig.noHalf; $('cutWrap').hidden = !rig.cut;
+    $('conceptTag').hidden = !rig.concept; $('halfWrap').hidden = !!rig.noHalf; $('cutWrap').hidden = !rig.cut; $('wsWrap').hidden = !(rig.ws && ARM.workspace);
+    if (rig.ws) rig.ws.visible = $('wsOn').checked;
     for (const k of Object.keys(RIGS)) {
       $('tab-' + k).toggleAttribute('aria-current', k === name);
       if (k === name) $('tab-' + k).setAttribute('aria-current', 'page');
@@ -1082,6 +1096,7 @@ a { color: var(--accent); }
   $('xray').onchange = applyXray;
   $('hideDist').onchange = applyHalf;
   $('cut').onchange = applyCut;
+  $('wsOn').onchange = e => { if (rig && rig.ws) rig.ws.visible = e.target.checked; };
   $('goS3').onclick = e => { e.preventDefault(); zoomRoll('S3'); };
   $('goF').onclick = e => { e.preventDefault(); zoomRoll('F'); };
   $('pass').onchange = e => rig && rig.togglePass(e.target.checked);

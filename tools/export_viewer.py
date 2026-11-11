@@ -121,6 +121,10 @@ def export_arm():
             e["R"] = A.joint_spec(e["name"]).R
     meta["statics"] = {"payload": ST.PAYLOAD, "pretension": ST.PRETENSION, "spool_r": ST.SPOOL_R, "knob_r": ST.KNOB_R,
                        "mass_kg": sum(x["m_static_g"] + x["m_moving_g"] for x in ST.mass_model()["elements"]) / 1000}
+    ws = ROOT / "docs" / "workspace.json"          # tools/workspace_study.py
+    if ws.exists():
+        W = json.loads(ws.read_text())
+        meta["workspace"] = {"box": W["box"], "sweet": W["sweet"]["p"]}
     with open(OUT / "arm_chain.json", "w") as f:
         json.dump(meta, f, separators=(",", ":"))
     print("arm_chain.json written")
