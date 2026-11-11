@@ -191,7 +191,7 @@
    95.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0018,
+  "thin_wall_fraction": 0.0037,
   "pass": true
  },
  {
@@ -204,7 +204,7 @@
    95.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0028,
+  "thin_wall_fraction": 0.0025,
   "pass": true
  },
  {
@@ -425,7 +425,7 @@
    119.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0015,
+  "thin_wall_fraction": 0.0018,
   "pass": true
  },
  {
@@ -438,7 +438,7 @@
    119.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0005,
+  "thin_wall_fraction": 0.0028,
   "pass": true
  },
  {
@@ -464,7 +464,7 @@
    107.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0007,
+  "thin_wall_fraction": 0.0018,
   "pass": true
  },
  {
@@ -477,7 +477,7 @@
    107.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.001,
+  "thin_wall_fraction": 0.0008,
   "pass": true
  },
  {
@@ -581,7 +581,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.007,
+  "thin_wall_fraction": 0.0063,
   "pass": true
  },
  {
@@ -594,7 +594,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0067,
+  "thin_wall_fraction": 0.0063,
   "pass": true
  },
  {
@@ -620,7 +620,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0058,
+  "thin_wall_fraction": 0.0053,
   "pass": true
  },
  {
@@ -633,7 +633,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0055,
+  "thin_wall_fraction": 0.005,
   "pass": true
  }
 ]

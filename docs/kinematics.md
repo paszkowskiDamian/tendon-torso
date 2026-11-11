@@ -39,7 +39,7 @@ where:
 | 10 | link (forearm) | – | 0° | 0 | 41 | |
 | 11 | W1 | hinge, Rx | 0° | 47 | 41 | ±60° |
 | 12 | link | – | 0° | 0 | 22 | |
-| 13 | W2 | hinge, Rx | 90° | 47 | 41 | ±30° |
+| 13 | W2 | hinge, Rx | 90° | 47 | 41 | ±90° |
 | 14 | gripper | – | 0° | 0 | 0 | (fingers 0…41°) |
 
 All seven axes cross the arm's centreline, and $R_z$ commutes with $T_z$. The chain therefore collapses to joint-to-joint distances along the arm:
@@ -98,10 +98,10 @@ Measured by `tools/check_ik.py` on 150 random reachable poses, each solved from 
 
 | target | solved | worst error | time |
 |---|---|---|---|
-| position | 150 / 150 | 0.48 mm | ~3 ms |
-| position + orientation | 150 / 150 | 0.50 mm, 0.19° | ~4 ms |
+| position | 150 / 150 | 0.49 mm | ~3 ms |
+| position + orientation | 150 / 150 | 0.50 mm, 0.18° | ~4 ms |
 
-**Workspace** (shoulder frame): x −476…771, y −647…928, z −930…491 mm. The tool reaches 167–938 mm from the S1 axis.
+**Workspace** (shoulder frame): x −465…766, y −633…928, z −920…495 mm. The tool reaches 167–937 mm from the S1 axis.
 
 ## 5. From joint angles to cranks
 

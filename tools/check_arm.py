@@ -2,6 +2,7 @@
 
     .venv/bin/python tools/check_arm.py           # all checks
     .venv/bin/python tools/check_arm.py ranges    # only joint ranges
+    .venv/bin/python tools/check_arm.py bends     # only the tube bends through the hinges (slow)
 """
 import itertools
 import math
@@ -155,6 +156,13 @@ def check_tubes():
     return ok
 
 
+def check_bends():
+    """Tubes passing through each hinge bend by the joint angle: bend radius >= the PTFE minimum."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import check_tube_bends as TB
+    return all(TB.check_all().values())
+
+
 def check_tensions():
     print("== tendon tension / crank effort (static, arm 2 kg, 0.5 kg payload) ==")
     # rough static torques with the arm horizontal
@@ -277,10 +285,10 @@ def check_gripper():
 
 
 if __name__ == "__main__":
-    which = sys.argv[1:] or ["tubes", "tensions", "gripper", "ranges", "combos", "cranks", "balance"]
+    which = sys.argv[1:] or ["tubes", "bends", "tensions", "gripper", "ranges", "combos", "cranks", "balance"]
     res = {}
     for w in which:
         res[w] = {"ranges": check_ranges, "combos": check_combos, "cranks": check_cranks,
-                  "tubes": check_tubes, "tensions": check_tensions, "balance": check_balance,
+                  "tubes": check_tubes, "bends": check_bends, "tensions": check_tensions, "balance": check_balance,
                   "gripper": check_gripper}[w]()
     print("\nRESULT:", {k: ("PASS" if v else "FAIL") for k, v in res.items()})
