@@ -45,6 +45,9 @@ RET_HOLE = 3.3             # retainer screw clearance (M3)
 CHEEK_X0, CHEEK_X1 = 3.2, 6.2   # idler cheek faces from the idler centre (x)
 CHEEK_HY = 4.5             # idler cheek half depth (y)
 BOSS_HOLE = 3.2            # M3 through the 623 spacer bosses (d 4.6): 0.7 mm ring wall
+SOCKET_TILT = 45.0         # Bowden socket leans inwards (deg from vertical): the cord leaves the
+                           # idler at its lower-outer side and runs under it, so the socket exits
+                           # the plate ~10 mm closer to the axis (smaller link bore and plate)
 
 
 @dataclass
@@ -116,9 +119,23 @@ class RollSpec:
         need2 = 4.5 + math.sqrt((self.r_o + 1.2) ** 2 - cheek_x ** 2)
         return max(need1, need2)
 
+    def socket_line(self, zg):
+        """Cord leg from the idler (groove at height zg) down into the Bowden socket, in the
+        idler plane x = +-R: (tangent point (y, z), y at the plate top z=0, y at the plate
+        bottom z=in_z). The leg leans SOCKET_TILT inwards (towards the roll axis)."""
+        t = math.radians(SOCKET_TILT)
+        yi, zc = self.idler_y(), zg - IDLER_CORD_R
+        ty, tz = yi + IDLER_CORD_R * math.cos(t), zc - IDLER_CORD_R * math.sin(t)
+        y_at = lambda z: ty - (tz - z) * math.tan(t)      # noqa: E731
+        return (ty, tz), y_at(0.0), y_at(self.in_z)
+
+    def socket_r_max(self):
+        """Largest radius of a socket exit under the plate (sets the link bore)."""
+        return max(math.hypot(self.R, self.socket_line(zg)[2]) for zg in (self.z_a, self.z_b))
+
     def socket_xy(self):
-        """(x, y) of the cord-A socket; cord B is at (-x, y)."""
-        return self.R, self.idler_y() + IDLER_CORD_R
+        """(x, y) of the cord-A socket exit under the plate; cord B is at (-x, y_b)."""
+        return self.R, self.socket_line(self.z_a)[2]
 
     def wraps(self):
         wa = max(25.0 + self.hi, min(135.0, 290.0 + self.lo))
@@ -128,8 +145,7 @@ class RollSpec:
 
 def stator(s: RollSpec):
     F = P.FLANGES[s.cls]
-    sx, sy = s.socket_xy()
-    r_plate = max(F["od"], math.hypot(sx, sy) + 5)
+    r_plate = max(F["od"], s.socket_r_max() + 5)
     yi = s.idler_y()
     z_top = s.z_flange - CLAMP_GAP
     body = cyl_z(r_plate, s.in_z, 0)
@@ -143,11 +159,17 @@ def stator(s: RollSpec):
         for side in (-1, 1):
             c0, c1 = sorted((x + side * CHEEK_X0, x + side * CHEEK_X1))
             body = body.union(box(c0, c1, yi - CHEEK_HY, yi + CHEEK_HY, -0.5, zc + 5.0))
-            # 45 deg buttress on the far side (away from the drum, clear of the cord leg)
-            y0 = yi + CHEEK_HY
-            web = (cq.Workplane("YZ").workplane(offset=c0)
-                   .polyline([(y0 - 1, -0.5), (y0 + h, -0.5), (y0, h), (y0 - 1, h)]).close().extrude(c1 - c0))
-            body = body.union(web)
+            # 45 deg buttress on the inner side (the outer side would need a wider plate);
+            # the cord leg runs between the cheeks, the buttress stays clear of the drum
+            y0 = yi - CHEEK_HY
+            xn = min(abs(c0), abs(c1))
+            r_clear = s.r_o + 1.5
+            y_min = math.sqrt(r_clear ** 2 - xn ** 2) + 0.5 if xn < r_clear else -1e9
+            g = min(h, y0 - y_min)
+            if g > 1.0:
+                web = (cq.Workplane("YZ").workplane(offset=c0)
+                       .polyline([(y0 + 1, -0.5), (y0 - g, -0.5), (y0, g), (y0 + 1, g)]).close().extrude(c1 - c0))
+                body = body.union(web)
             # spacer boss on the inside face: touches only the 623 inner race
             xf = x + side * CHEEK_X0
             body = body.union(rod((xf, yi, zc), (xf - side * 1.15, yi, zc), 4.6))
@@ -157,9 +179,13 @@ def stator(s: RollSpec):
         # bolt through both spacer bosses, face to face of the cheeks (the cheek holes
         # start 1 mm outside the cheek, so they don't reach the boss tips)
         cuts.append(rod((x - CHEEK_X0 - 0.2, yi, zc), (x + CHEEK_X0 + 0.2, yi, zc), BOSS_HOLE))
-        # Bowden socket: tube from below, cord exits up to the idler
-        cuts.append(cyl_z(P.TUBE_OD / 2 + 0.15, s.in_z - 1, -2.0).translate((x, sy, 0)))
-        cuts.append(cyl_z(P.TUBE_ID / 2 + 0.2, -2.5, 1.0).translate((x, sy, 0)))
+        # Bowden socket, leaning inwards: tube from below up to 2 mm under the plate top,
+        # then the cord hole up to the top face (towards the idler's lower-outer side)
+        (_, _), y_top, y_bot = s.socket_line(zg)
+        k = math.tan(math.radians(SOCKET_TILT))
+        ys = lambda z: y_top + z * k                              # noqa: E731
+        cuts.append(rod((x, ys(s.in_z - 1.5), s.in_z - 1.5), (x, ys(-2.0), -2.0), P.TUBE_OD + 0.3))
+        cuts.append(rod((x, ys(-2.6), -2.6), (x, ys(1.2), 1.2), P.TUBE_ID + 0.4))
     # retainer screw pilots (self-tapping M3) in the top of the tube
     for a in (90, 210, 330):
         x, y = polar(s.r_screw, a)

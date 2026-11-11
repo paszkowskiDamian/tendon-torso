@@ -136,6 +136,22 @@ def check_tubes():
             kind = f"bore {d:.0f} mm"
         print(f"  {j:3s}: {n:2d} tubes through, {kind}, fits ~{cap}  {'ok' if cap >= n else 'TOO SMALL'}")
         ok &= cap >= n
+    # roll joints: the Bowden sockets open under the stator plate, inside the link below it;
+    # the link bore there must take the tube (+ 0.5 mm)
+    from arm import link as L
+    from arm.roll import RollSpec
+    names = [c[0] for c in A.CHAIN]
+    for j in A.JOINTS:
+        s = A.joint_spec(j)
+        if not isinstance(s, RollSpec):
+            continue
+        prev = A.CHAIN[names.index(j) - 1]
+        bore = P.FLANGES[prev[1][1]]["tube_r"] - L.WALL
+        need = s.socket_r_max() + P.TUBE_OD / 2 + 0.5
+        good = bore >= need
+        print(f"  {j:3s}: socket exits at r {s.socket_r_max():.1f}, {prev[0]} bore r {bore:.1f}"
+              f" (needs {need:.1f})  {'ok' if good else 'TUBE BLOCKED'}")
+        ok &= good
     return ok
 
 

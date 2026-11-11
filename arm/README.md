@@ -48,12 +48,12 @@ crank ×7 ──PTFE tubes──► shoulder beam ──► S1 ─ S2 ─ link �
 * **Roll module** (`roll.py`): stator + rotor + retainer + 2 idlers. Check the race shoulder sizes of the 6806/6805 you buy against `roll.py`.
   * The stator tube carries two thin-section bearings.
   * The rotor ring holds their outer races and has two grooves.
-  * Each cord comes up from a socket in the stator plate and turns 90° over a 623 idler pulley onto the rotor.
+  * Each cord comes up from a socket in the stator plate and turns over a 623 idler pulley onto the rotor. The sockets lean 45° inwards: the cord leaves the idler at its lower-outer side and runs under it, so the socket opens under the plate ~10 mm closer to the axis. That keeps the link below narrow (S3 sits on a plain L tube, F on a 76 mm "ML" tube) and the stator plates at Ø 104 / 100 mm.
   * The bore stays open for the tubes going further down.
 * **Links** (`link.py`):
   * tubes with outward bolting lips, bolt heads on the lips;
   * a full 48° cone carries the top lip, with a counterbore up through it for each bolt head;
-  * on the S→XM link the bottom bolts are reached with a hex key from inside the wide bore.
+  * on the S→ML forearm link the bottom bolts are reached with a hex key from inside the wide bore.
 * **Crank module** (`crank.py`):
   * an M8 shaft on two 608s, with a helical spool clamped between them;
   * a crank arm with a **lock pin** that indexes every 10° on a ring of holes;
@@ -167,29 +167,29 @@ Same mass model for both columns (CAD volume + surface, skin solid, per-part inf
 
 | | Before | After |
 |---|---|---|
-| Printed PETG (4 walls + 40% everywhere → link/module profiles) | 1468 g | 1023 g |
+| Printed PETG (4 walls + 40% everywhere → link/module profiles) | 1468 g | 1000 g |
 | Hardware | 704 g | 563 g |
-| **Arm total** | **2.17 kg** | **1.59 kg (−27%)** |
-| S1 worst-case torque (0.3 kg payload) | 10.4 N·m | 7.8 N·m (−25%) |
-| S1 peak with the balance springs (no payload) | 2.9 N·m | 1.85 N·m |
+| **Arm total** | **2.17 kg** | **1.56 kg (−28%)** |
+| S1 worst-case torque (0.3 kg payload) | 10.4 N·m | 7.7 N·m (−26%) |
+| S1 peak with the balance springs (no payload) | 2.9 N·m | 1.83 N·m |
 
 What changed, by how much it helps the shoulder:
 
 * **Elbow and wrist hinges on 625 bearings + M5 axles** instead of 608 + M8 (−141 g of steel at the far end of the arm). They see at most 120 N; a 625 is rated 670 N static. Lugs shrink with them.
 * **Print profiles:** links 3 walls + 15%, modules 4 walls + 25%. Loads are tiny (link stress ≤ 1.3 MPa, insert pull ≤ 52 N), so 40% infill bought nothing.
 * **Link walls 3 → 2 mm.**
-* **Roll-stator flanges sized to the Bowden sockets** (XL lip Ø 126 → 113 mm, XM Ø 122 → 108 mm): the forearm and upper-arm cones are smaller.
+* **Roll stators slimmed by inclining the Bowden sockets 45° inwards** (plates Ø 126 → 104 mm on S3, Ø 122 → 100 mm on F). The link above S3 is now a straight L tube instead of a cone; the forearm cone flares to Ø 76 instead of Ø 98. `tools/check_arm.py tubes` checks that every socket exit lies inside the link bore.
 * Not done, on purpose: hollowing the solid-looking cones. At 15% infill their inside is mostly air already; a cavity would only add two more solid skins.
 
-## Loads (worst case over the workspace, 1.59 kg arm + 0.3 kg payload, no springs)
+## Loads (worst case over the workspace, 1.56 kg arm + 0.3 kg payload, no springs)
 
 From `python -m arm.statics` (full table in `docs/loads_report.txt`); cord = torque / drum radius + 20 N pretension.
 
 | | Joint torque | Cord tension | Force on the crank knob |
 |---|---|---|---|
-| S1 | 7.8 N·m | 207 N | 27 N |
-| S2 | 5.3 N·m | 147 N | 19 N |
-| S3 | 2.2 N·m | 100 N | 13 N |
+| S1 | 7.7 N·m | 204 N | 26 N |
+| S2 | 5.3 N·m | 146 N | 19 N |
+| S3 | 2.2 N·m | 99 N | 13 N |
 | E | 2.3 N·m | 83 N | 11 N |
 | W1 | 0.7 N·m | 57 N | 7 N |
 

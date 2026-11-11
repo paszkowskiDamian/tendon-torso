@@ -14,6 +14,6 @@ W2 = HingeSpec("W2", "S", R=20.0, cav=4.0, lo=-30, hi=30, lug_r=10, lug_t=9, slo
                bearing=P.B625, axle="M5")
 HINGES = [S1, S2, E, W1, W2]
 
-S3 = RollSpec("S3", "XL", "M", bearing=(30.0, 42.0, 7.0), lo=-80, hi=80, tubes_through=8)   # 6806-2RS x2
-F = RollSpec("F", "XM", "S", bearing=(25.0, 37.0, 7.0), lo=-85, hi=85, tubes_through=4)    # 6805-2RS x2
+S3 = RollSpec("S3", "L", "M", bearing=(30.0, 42.0, 7.0), lo=-80, hi=80, tubes_through=8)   # 6806-2RS x2
+F = RollSpec("F", "ML", "S", bearing=(25.0, 37.0, 7.0), lo=-85, hi=85, tubes_through=4)    # 6805-2RS x2
 ROLLS = [S3, F]

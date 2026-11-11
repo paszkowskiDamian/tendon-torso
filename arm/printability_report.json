@@ -238,12 +238,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   108.0,
-   108.0,
+   100.0,
+   100.0,
    42.6
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0037,
+  "thin_wall_fraction": 0.0082,
   "pass": true
  },
  {
@@ -277,12 +277,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   108.0,
-   108.0,
+   100.0,
+   100.0,
    55.0
   ],
   "worst_bridge_span": 1.7,
-  "thin_wall_fraction": 0.0095,
+  "thin_wall_fraction": 0.0087,
   "pass": true
  },
  {
@@ -316,12 +316,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   113.0,
-   113.0,
+   104.0,
+   104.0,
    60.0
   ],
   "worst_bridge_span": 1.7,
-  "thin_wall_fraction": 0.0035,
+  "thin_wall_fraction": 0.0038,
   "pass": true
  },
  {
@@ -459,12 +459,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   113.0,
-   113.0,
+   104.0,
+   104.0,
    42.6
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.004,
+  "thin_wall_fraction": 0.0057,
   "pass": true
  },
  {

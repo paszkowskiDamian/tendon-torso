@@ -15,17 +15,17 @@
 | `w2_base.stl` | 1 | 64 x 64 x 57 | W2 hinge base - plate down |
 | `w2_rotor_a.stl` | 1 | 32 x 64 x 63 | W2 rotor half A - top plate down |
 | `w2_rotor_b.stl` | 1 | 32 x 64 x 63 | W2 rotor half B - top plate down |
-| `s3_stator.stl` | 1 | 113 x 113 x 43 | S3 roll stator - plate down |
+| `s3_stator.stl` | 1 | 104 x 104 x 43 | S3 roll stator - plate down |
 | `s3_rotor.stl` | 1 | 86 x 86 x 42 | S3 roll rotor - top plate down |
 | `s3_retainer.stl` | 1 | 32 x 32 x 3 | S3 bearing retainer |
-| `f_stator.stl` | 1 | 108 x 108 x 43 | F roll stator - plate down |
+| `f_stator.stl` | 1 | 100 x 100 x 43 | F roll stator - plate down |
 | `f_rotor.stl` | 1 | 64 x 64 x 42 | F roll rotor - top plate down |
 | `f_retainer.stl` | 1 | 27 x 27 x 3 | F bearing retainer |
 | `idler_tyre.stl` | 4 | 16 x 16 x 5 | idler tyre for a 623 bearing (2 per roll joint) |
 | `link_s1_s2.stl` | 1 | 184 x 104 x 22 | link L->L, 22 mm + balance yoke arms - bottom lip down, arms flat on the bed |
-| `link_s2_s3.stl` | 1 | 113 x 113 x 60 | link L->XL, 60 mm - bottom lip down, 48 deg cone under the top lip |
+| `link_s2_s3.stl` | 1 | 104 x 104 x 60 | link L->L, 60 mm - bottom lip down, 48 deg cone under the top lip |
 | `link_upper.stl` | 1 | 86 x 86 x 64 | link M->S, 64 mm - bottom lip down, 48 deg cone under the top lip |
-| `link_e_f.stl` | 1 | 108 x 108 x 55 | link S->XM, 55 mm - bottom lip down, 48 deg cone under the top lip |
+| `link_e_f.stl` | 1 | 100 x 100 x 55 | link S->ML, 55 mm - bottom lip down, 48 deg cone under the top lip |
 | `link_forearm.stl` | 1 | 64 x 64 x 41 | link S->S, 41 mm - bottom lip down, 48 deg cone under the top lip |
 | `link_w1_w2.stl` | 1 | 64 x 64 x 22 | link S->S, 22 mm - bottom lip down, 48 deg cone under the top lip |
 | `crank_frame.stl` | 7 | 51 x 80 x 132 | crank frame - foot down (teardrop bearing holes, 48 deg roof under the beam) |

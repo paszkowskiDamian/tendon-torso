@@ -27,10 +27,10 @@ LIP_T = 5.0                  # link bolting lips
 #     bc: bolt circle radius, od: lip/plate radius, n: bolts.
 #     Links bolt with heads on their OUTWARD lips; modules carry heat-set inserts.
 FLANGES = {
-    # roll stators: the link bore only has to cover the two Bowden sockets
-    # (S3 at r 39.2, F at r 36.8; + tube 2.15 + 1 mm + 2 mm link wall)
-    "XL": dict(tube_r=44.5, bc=50.5, od=56.5, n=8),   # upper-arm rotation stator (deltoid)
-    "XM": dict(tube_r=42.0, bc=48.0, od=54.0, n=8),   # forearm rotation stator
+    # forearm-twist stator: its link bore covers the two inclined Bowden socket exits
+    # (r <= 32.2 + tube 2.15 + 1.5 mm + 2 mm wall). The upper-arm stator (S3, sockets at
+    # r <= 34.7) uses "L".
+    "ML": dict(tube_r=38.0, bc=44.0, od=50.0, n=8),
     "L":  dict(tube_r=40.0, bc=46.0, od=52.0, n=8),   # shoulder hinges
     "M":  dict(tube_r=31.0, bc=37.0, od=43.0, n=8),   # upper arm / elbow
     "S":  dict(tube_r=22.0, bc=27.0, od=32.0, n=4),   # forearm / wrist

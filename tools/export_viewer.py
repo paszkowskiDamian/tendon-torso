@@ -79,10 +79,12 @@ def export_arm():
                                in_z=spec.in_z, plate=spec.plate_top))
         elif isinstance(spec, R.RollSpec):
             sx, sy = spec.socket_xy()
+            ya0, yb0 = spec.socket_line(spec.z_a)[1], spec.socket_line(spec.z_b)[1]
             wa, wb = spec.wraps()
             e.update(kind="roll", lo=spec.lo, hi=spec.hi, label=A.JOINT_LABEL[name],
                      cord=dict(R=spec.R, sx=sx, sy=sy, yi=spec.idler_y(), ri=R.IDLER_CORD_R,
-                               za=spec.z_a, zb=spec.z_b, wa=wa, wb=wb, in_z=spec.in_z),
+                               za=spec.z_a, zb=spec.z_b, wa=wa, wb=wb, in_z=spec.in_z,
+                               tilt=R.SOCKET_TILT, ya0=ya0, yb0=yb0),
                      # thin-section bearing pair (d, D, B, z of the lower face) for the cutaway view
                      bearings=[[*spec.bearing, 1.0], [*spec.bearing, spec.z_top_pocket]])
         else:

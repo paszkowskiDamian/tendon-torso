@@ -517,7 +517,10 @@ a { color: var(--accent); }
         else { pts.push(P(el.inner, ox * 0.8, oy * 0.8, el.in_z + 2), P(el.inner, ox * 0.8, oy * 0.8, el.out_z - 4)); }
       }
       if (e.kind === 'hinge') hingeSocket(e, s).forEach(p => pts.push(P(e.inner, p.x, p.y, p.z)));
-      else { const x = s < 0 ? e.cord.sx : -e.cord.sx; pts.push(P(e.inner, x, e.cord.sy, e.in_z - 16), P(e.inner, x, e.cord.sy, -2)); }
+      else {                                   // inclined roll socket: y(z) = y0 + z * tan(tilt)
+        const c = e.cord, x = s < 0 ? c.sx : -c.sx, y0 = s < 0 ? c.ya0 : c.yb0, k = Math.tan(rad(c.tilt ?? 0));
+        pts.push(P(e.inner, x, y0 + (e.in_z - 8) * k, e.in_z - 8), P(e.inner, x, y0 - 2 * k, -2));
+      }
       return pts;
     }
     function cords(k, q) {
@@ -527,13 +530,15 @@ a { color: var(--accent); }
         cordSet[k][0](polyTube([A].concat(arc(-c.gx, 0, 0, c.R, c.phi, c.phi + c.wa + q, 30)), 0.6));
         cordSet[k][1](polyTube([B].concat(arc(c.gx, 0, 0, c.R, 180 - c.phi, 180 - c.phi - c.wb + q, 30)), 0.6));
       } else {
-        const idl = (x, zg) => { const zc = zg - c.ri, pts = [V(x, c.sy, -1)];
-          for (let i = 0; i <= 8; i++) { const t = rad(90 * i / 8); pts.push(V(x, c.yi + c.ri * Math.cos(t), zc + c.ri * Math.sin(t))); }
+        // cord from the inclined socket (y0 at the plate top) over the idler to the drum
+        const tl = c.tilt ?? 0, kt = Math.tan(rad(tl));
+        const idl = (x, zg, y0) => { const zc = zg - c.ri, pts = [V(x, y0 - 1 * kt, -1)];
+          for (let i = 0; i <= 10; i++) { const t = rad(-tl + (90 + tl) * i / 10); pts.push(V(x, c.yi + c.ri * Math.cos(t), zc + c.ri * Math.sin(t))); }
           return pts; };
         const ringA = []; for (let i = 0; i <= 40; i++) { const a = rad(-(c.wa - q) * i / 40); ringA.push(V(c.R * Math.cos(a), c.R * Math.sin(a), c.za)); }
         const ringB = []; for (let i = 0; i <= 40; i++) { const a = rad(180 + (c.wb + q) * i / 40); ringB.push(V(c.R * Math.cos(a), c.R * Math.sin(a), c.zb)); }
-        cordSet[k][0](polyTube(idl(c.sx, c.za).concat(ringA), 0.6));
-        cordSet[k][1](polyTube(idl(-c.sx, c.zb).concat(ringB), 0.6));
+        cordSet[k][0](polyTube(idl(c.sx, c.za, c.ya0 ?? c.sy).concat(ringA), 0.6));
+        cordSet[k][1](polyTube(idl(-c.sx, c.zb, c.yb0 ?? c.sy).concat(ringB), 0.6));
       }
     }
 
