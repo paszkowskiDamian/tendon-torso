@@ -10,7 +10,8 @@ Frames
   +X = outwards (the way abduction lifts the arm), +Y = forwards (the way
   flexion lifts the arm), +Z = up. Units: mm and degrees.
 * TOOL point: centre of the W2 rotor plate (the gripper mount) + TOOL_OFFSET
-  along the hand axis (default 60 mm = middle of a future gripper).
+  along the hand axis = the gripper's grasp centre (between the pad centres,
+  gripper.GRASP_Z; the last chain element, the gripper, has in = out = 0).
 
 Chain (see docs/kinematics.md for the equations)
 ------------------------------------------------
@@ -20,7 +21,7 @@ For every element i (module or link) the transform is
 
 with R_i = Rx(q) for a hinge, Rz(q) for a roll joint, identity for a link, and
 
-    T_tool(q) = WORLD * A_1(q_1) * ... * A_13 * Tz(TOOL_OFFSET)
+    T_tool(q) = WORLD * A_1(q_1) * ... * A_14 * Tz(TOOL_OFFSET)
 """
 import math
 from dataclasses import dataclass
@@ -29,7 +30,7 @@ from functools import lru_cache
 import numpy as np
 
 JOINTS = ["S1", "S2", "S3", "E", "F", "W1", "W2"]
-TOOL_OFFSET = 60.0
+TOOL_OFFSET = 72.0     # = gripper.GRASP_Z (tools/check_arm.py gripper checks it)
 
 
 # ------------------------------------------------------------------ small SE(3) helpers

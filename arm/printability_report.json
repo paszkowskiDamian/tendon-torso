@@ -178,7 +178,7 @@
    75.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0052,
+  "thin_wall_fraction": 0.0053,
   "pass": true
  },
  {
@@ -191,7 +191,7 @@
    95.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0028,
+  "thin_wall_fraction": 0.0018,
   "pass": true
  },
  {
@@ -204,7 +204,7 @@
    95.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0027,
+  "thin_wall_fraction": 0.0028,
   "pass": true
  },
  {
@@ -257,6 +257,58 @@
   ],
   "worst_bridge_span": 0.0,
   "thin_wall_fraction": 0.0048,
+  "pass": true
+ },
+ {
+  "file": "gripper_finger_a.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   34.0,
+   73.9,
+   14.0
+  ],
+  "worst_bridge_span": 1.9,
+  "thin_wall_fraction": 0.003,
+  "pass": true
+ },
+ {
+  "file": "gripper_finger_b.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   33.7,
+   72.7,
+   14.0
+  ],
+  "worst_bridge_span": 0.8,
+  "thin_wall_fraction": 0.0002,
+  "pass": true
+ },
+ {
+  "file": "gripper_pad.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   10.9,
+   17.5,
+   33.8
+  ],
+  "worst_bridge_span": 4.6,
+  "thin_wall_fraction": 0.0,
+  "pass": true
+ },
+ {
+  "file": "gripper_palm.stl",
+  "problems": [],
+  "notes": [],
+  "size": [
+   62.0,
+   62.0,
+   37.0
+  ],
+  "worst_bridge_span": 0.9,
+  "thin_wall_fraction": 0.0,
   "pass": true
  },
  {
@@ -360,7 +412,7 @@
    86.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0022,
+  "thin_wall_fraction": 0.0035,
   "pass": true
  },
  {
@@ -373,7 +425,7 @@
    119.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0017,
+  "thin_wall_fraction": 0.0015,
   "pass": true
  },
  {
@@ -386,7 +438,7 @@
    119.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0013,
+  "thin_wall_fraction": 0.0005,
   "pass": true
  },
  {
@@ -399,7 +451,7 @@
    86.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0022,
+  "thin_wall_fraction": 0.0018,
   "pass": true
  },
  {
@@ -412,7 +464,7 @@
    107.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0012,
+  "thin_wall_fraction": 0.0007,
   "pass": true
  },
  {
@@ -425,7 +477,7 @@
    107.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0012,
+  "thin_wall_fraction": 0.001,
   "pass": true
  },
  {
@@ -529,7 +581,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0057,
+  "thin_wall_fraction": 0.007,
   "pass": true
  },
  {
@@ -542,7 +594,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0055,
+  "thin_wall_fraction": 0.0067,
   "pass": true
  },
  {

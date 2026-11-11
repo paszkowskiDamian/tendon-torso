@@ -60,14 +60,21 @@ def export_arm():
     sys.path.insert(0, str(ROOT))
     from arm import assembly as A
     from arm import crank as C
+    from arm import gripper as G
     from arm import hinge as H
     from arm import roll as R
     from arm import torso as T
     chain = []
     for name, spec, mount in A.CHAIN:
-        st, mv = A.element_parts(name, spec)
-        for k, w in list(st.items()) + list(mv.items()):
-            dump(w, "arm_" + k, 0.15, 0.3)
+        if isinstance(spec, G.GripperSpec):
+            # palm static; fingers + pads exported CLOSED, the viewer turns them about their pivots
+            st, mv = G.parts(0.0), {}
+            for k, w in st.items():
+                dump(w, "arm_" + k, 0.1, 0.25)
+        else:
+            st, mv = A.element_parts(name, spec)
+            for k, w in list(st.items()) + list(mv.items()):
+                dump(w, "arm_" + k, 0.15, 0.3)
         z_in, z_out = A.element_io(spec, name)
         e = {"name": name, "mount": mount, "in_z": z_in, "out_z": z_out,
              "static": ["arm_" + k for k in st], "moving": ["arm_" + k for k in mv]}
@@ -87,6 +94,14 @@ def export_arm():
                                tilt=R.SOCKET_TILT, ya0=ya0, yb0=yb0),
                      # thin-section bearing pair (d, D, B, z of the lower face) for the cutaway view
                      bearings=[[*spec.bearing, 1.0], [*spec.bearing, spec.z_top_pocket]])
+        elif isinstance(spec, G.GripperSpec):
+            th = [G.THETA_MAX * i / 40 for i in range(41)]
+            e.update(kind="gripper", static=["arm_gripper_palm"], label="Gripper",
+                     fingers=[{"parts": ["arm_gripper_finger_" + w, "arm_gripper_pad_" + w],
+                               "pivot": list(G.pivot(w.upper())), "sign": -1 if w == "a" else 1} for w in ("a", "b")],
+                     theta_max=G.THETA_MAX, open_table=[[t, G.opening(t)] for t in th],
+                     cord=dict(R=G.R_C, px=G.PX, zp=G.ZP, z0=G.BOSS_TOP, anchor=G.ANCHOR, socket=G.SOCKET_DEPTH),
+                     force=dict(L=G.L_PAD, R=G.R_C, spring=[[t, 2 * G.spring_state(t)[2] / G.R_C] for t in th]))
         else:
             e.update(kind="link")
         chain.append(e)
@@ -117,7 +132,7 @@ def export_arm():
     from arm import statics as ST
     for e, m in zip(meta["chain"], ST.mass_model()["elements"]):
         e.update(ms=m["m_static_g"] / 1000, cs=m["com_static"], mm=m["m_moving_g"] / 1000, cm=m["com_moving"])
-        if e["kind"] != "link":
+        if e["kind"] in ("hinge", "roll"):
             e["R"] = A.joint_spec(e["name"]).R
     meta["statics"] = {"payload": ST.PAYLOAD, "pretension": ST.PRETENSION, "spool_r": ST.SPOOL_R, "knob_r": ST.KNOB_R,
                        "mass_kg": sum(x["m_static_g"] + x["m_moving_g"] for x in ST.mass_model()["elements"]) / 1000}

@@ -13,6 +13,7 @@ import cadquery as cq
 import numpy as np
 
 from . import crank as C
+from . import gripper as G
 from . import hinge as H
 from . import link as L
 from . import params as P
@@ -48,10 +49,13 @@ CHAIN = [
     ("W1", W1, 0),
     ("link_w1_w2", ("S", "S", SPACER), 0),
     ("W2", W2, 90),
+    ("gripper", G.GRIPPER, 0),     # end element: in = out = 0, its frame is the W2 plate top
 ]
 JOINTS = ["S1", "S2", "S3", "E", "F", "W1", "W2"]
 JOINT_LABEL = {"S1": "Shoulder flexion", "S2": "Shoulder abduction", "S3": "Upper-arm rotation",
-               "E": "Elbow", "F": "Forearm twist", "W1": "Wrist flexion", "W2": "Wrist tilt"}
+               "E": "Elbow", "F": "Forearm twist", "W1": "Wrist flexion", "W2": "Wrist tilt", "G": "Gripper"}
+# the gripper's fingers in the CAD assembly (collision checks, renders): fully open, the widest pose
+GRIP_THETA = G.THETA_MAX
 
 
 def link_length(name, spec):
@@ -122,6 +126,8 @@ def element_parts(name, spec):
             st[f"{key}_idler_{tag}"] = (tyre.translate((0, 0, -R.TYRE_W / 2)).rotate((0, 0, 0), (0, 1, 0), 90)
                                         .translate((x, yi, zg - R.IDLER_CORD_R)))
         out = (st, {f"{key}_rotor": R.rotor(spec)})
+    elif isinstance(spec, G.GripperSpec):
+        out = (G.parts(GRIP_THETA), {})
     elif name == BALANCE_YOKE_ON:
         out = ({key: balance_yoke_link()}, {})
     else:
@@ -132,7 +138,7 @@ def element_parts(name, spec):
 
 
 def element_io(spec, name):
-    if isinstance(spec, (H.HingeSpec, R.RollSpec)):
+    if isinstance(spec, (H.HingeSpec, R.RollSpec, G.GripperSpec)):
         return spec.in_z, spec.out_z
     return 0.0, link_length(name, spec)
 
@@ -171,7 +177,7 @@ def arm_solids(q=None, only=None):
 
 
 # ------------------------------------------------------------ torso + cranks
-CRANK_ORDER = ["S1", "S2", "S3", "E", "F", "W1", "W2"]
+CRANK_ORDER = ["S1", "S2", "S3", "E", "F", "W1", "W2", "G"]   # G: gripper, one cord (spool side A)
 # racks start at x = 112: the +X balance spring, its cord and anchor post run along x = 85 (balance.py)
 RACK_CENTRES = [(220.0, 40.0), (220.0, 150.0), (220.0, 260.0)]
 SHAFT_Z = 5.0 - C.FOOT_Z[0]          # rack thickness + foot depth below the shaft
@@ -194,11 +200,11 @@ def crank_parts():
 
 
 def joint_spec(j):
-    return {"S1": S1, "S2": S2, "S3": S3, "E": E, "F": F, "W1": W1, "W2": W2}[j]
+    return {"S1": S1, "S2": S2, "S3": S3, "E": E, "F": F, "W1": W1, "W2": W2, "G": G.GRIPPER}[j]
 
 
 def crank_ratio(j):
-    """Crank turns per joint turn (= drum radius / spool radius)."""
+    """Crank turns per joint turn (= drum radius / spool radius). For G: per finger turn."""
     return joint_spec(j).R / C.R_SPOOL
 
 
