@@ -5,9 +5,12 @@
 
 Mass model
 ----------
-Printed parts: CAD volume x PETG density (1.27 g/cm3) x FILL. FILL = 0.6 is a
-typical 4 walls + 40 % gyroid print of these chunky parts. Each part's centre of
-mass comes from the CAD solid. Hardware (bearings, bolts, inserts, PTFE tubes
+Printed parts: CAD volume x PETG density (1.27 g/cm3) x fill_factor(part). The
+skin (perimeters + top/bottom layers, SHELL_T thick over the whole surface,
+holes included) prints solid, the rest at the part's infill (PROFILES: links
+3 walls + 15 % gyroid, modules 4 walls + 25 %), so thin walls come out solid
+and only chunky parts gain from low infill. Each part's centre of mass comes
+from the CAD solid. Hardware (bearings, bolts, inserts, PTFE tubes
 running through) is added per element. PAYLOAD sits at the tool point.
 
 The model is measured once from the CAD and cached in `arm/mass_model.json`.
@@ -43,7 +46,10 @@ CACHE = ROOT / "arm" / "mass_model.json"
 
 G = 9.81
 RHO = 1.27e-3          # g/mm3 PETG
-FILL = 0.6
+PROFILES = {             # print profile: (solid skin mm, infill)   -> PRINT_LIST.md
+    "link": (1.3, 0.15),       # 3 walls x 0.42 + 4 top/bottom layers, 15 % gyroid
+    "module": (1.8, 0.25),     # 4 walls x 0.45, 25 % gyroid (inserts, bearing seats)
+}
 PAYLOAD = 0.3          # kg at the tool point (gripper + object)
 PRETENSION = 20.0      # N per cord
 TUBE_G_PER_MM = 0.021  # PTFE 2x4 mm
@@ -51,7 +57,21 @@ KNOB_R = 62.0          # mm (crank arm)
 SPOOL_R = 8.0
 
 # hardware masses (g)
-HW = {"608": 12.0, "6806": 22.0, "6805": 16.0, "623": 2.0, "m8_axle": 18.0, "insert": 0.6, "m3": 1.0}
+HW = {"608": 12.0, "625": 4.5, "6806": 22.0, "6805": 16.0, "623": 2.0, "insert": 0.6, "m3": 1.0}
+AXLE_G = {"M8": 21.0, "M5": 5.0}   # stub axle set: socket bolt + nut (+ washer)
+BEARING_G = {(8.0, 22.0, 7.0): HW["608"], (5.0, 16.0, 5.0): HW["625"]}
+
+
+def print_profile(part):
+    return "link" if part.startswith("link") else "module"
+
+
+def fill_factor(shape, part=""):
+    """Effective solid fraction of a printed part (see the module docstring)."""
+    t, infill = PROFILES[print_profile(part)]
+    v, a = shape.Volume(), shape.Area()
+    shell = min(v, 0.5 * a * t)        # 0.5: the two faces of a thin wall share it
+    return (shell + infill * (v - shell)) / v
 ALLOW = {"link_bending_MPa": 8.0, "insert_pull_N": 250.0, "bearing_608_N": 1300.0}   # conservative, for printed PETG
 
 
@@ -70,9 +90,9 @@ def build_mass_model():
 
         def body(parts):
             m, mc = 0.0, np.zeros(3)
-            for w in parts.values():
+            for k, w in parts.items():
                 s = w.val()
-                v = s.Volume() * RHO * FILL
+                v = s.Volume() * RHO * fill_factor(s, k)
                 c = cq.Shape.centerOfMass(s)
                 m += v
                 mc += v * np.array([c.x, c.y, c.z])
@@ -82,8 +102,8 @@ def build_mass_model():
         z_in, z_out = A.element_io(spec, name)
         hw_s = hw_m = 0.0
         if isinstance(spec, HingeSpec):
-            hw_m += 2 * HW["608"] + P.FLANGES[spec.rcls]["n"] * HW["insert"]
-            hw_s += 2 * HW["m8_axle"] + P.FLANGES[spec.cls]["n"] * HW["insert"]
+            hw_m += 2 * BEARING_G[tuple(spec.bearing)] + P.FLANGES[spec.rcls]["n"] * HW["insert"]
+            hw_s += 2 * AXLE_G[spec.axle] + P.FLANGES[spec.cls]["n"] * HW["insert"]
         elif isinstance(spec, RollSpec):
             b = "6806" if spec.bearing[0] >= 30 else "6805"
             hw_m += HW[b] + P.FLANGES[spec.rotor_cls]["n"] * HW["insert"]
@@ -100,7 +120,7 @@ def build_mass_model():
         els.append({"name": name, "m_static_g": ms + hw_s, "com_static": cs.tolist(),
                     "m_moving_g": mm + hw_m, "com_moving": cm.tolist(),
                     "printed_g": ms + mm, "hardware_g": hw_s + hw_m})
-    model = {"fill": FILL, "rho": RHO, "elements": els}
+    model = {"profiles": PROFILES, "rho": RHO, "elements": els}
     CACHE.write_text(json.dumps(model, indent=1))
     return model
 
@@ -213,7 +233,7 @@ def element_loads(q_deg, payload=PAYLOAD):
             t = float(w["M_pivot"] @ a)
             Mp = w["M_pivot"] - t * a
             Fp = w["F"] - (w["F"] @ a) * a
-            s = 2 * (spec.hub_half - P.B608[2] / 2) / 1000
+            s = 2 * (spec.hub_half - spec.bearing[2] / 2) / 1000
             T = abs(t) / (spec.R / 1000) + PRETENSION
             d.update(tau_Nm=t, cord_N=T, knob_N=T * SPOOL_R / KNOB_R,
                      bearing_N=float(np.linalg.norm(Fp) / 2 + np.linalg.norm(Mp) / s + (T + PRETENSION) / 2))
@@ -233,7 +253,8 @@ def element_loads(q_deg, payload=PAYLOAD):
             ca, cb, L = spec
             fa, fb = P.FLANGES[ca], P.FLANGES[cb]
             ro = min(fa["tube_r"], fb["tube_r"])
-            ri = ro - 3.0
+            from .link import WALL as LINK_WALL
+            ri = ro - LINK_WALL
             I = math.pi / 4 * (ro ** 4 - ri ** 4)
             d["stress_MPa"] = d["bend_Nm"] * 1000 * ro / I
             fl = fa
@@ -269,7 +290,7 @@ def total_mass():
 
 def report():
     printed, hw = total_mass()
-    print(f"Arm mass: {printed:.0f} g printed (fill {FILL:.0%}) + {hw:.0f} g hardware = {(printed + hw) / 1000:.2f} kg"
+    print(f"Arm mass: {printed:.0f} g printed (links {PROFILES['link'][1]:.0%}, modules {PROFILES['module'][1]:.0%} infill) + {hw:.0f} g hardware = {(printed + hw) / 1000:.2f} kg"
           f"  (+ {PAYLOAD:.1f} kg payload at the tool)\n")
     print(f"{'element':14s} {'mass g':>7s}")
     for e in mass_model()["elements"]:

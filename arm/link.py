@@ -10,7 +10,7 @@ Print standing on the bottom lip, no supports:
   open from below; its ceiling is a small round bridge around the M3 hole;
 * links that get wider (B tube > A tube) keep the narrow A tube and let the cone do
   the flare; the bore widens in a 48 deg cone just below the top lip (the Bowden
-  sockets of the roll stators above sit out at r ~ 43-45);
+  sockets of the roll stators above sit out at r ~ 37-39);
 * where the cone would bury a bottom-lip head, a vertical counterbore from the bore
   runs down to it, so the bolt and a hex key go in from inside the link;
 * short spacers (the cone reaches the bottom lip) get a radial slot at each bolt so
@@ -24,6 +24,7 @@ from .cad import box, cyl_z, polar
 CONE_SLOPE = 1.1               # rise per mm of radius (> 1 -> steeper than 45 deg)
 HEAD_R = P.M3_HEAD_D / 2 + 0.4  # socket-head counterbore radius
 KEY_CLEAR = 18.0               # free height wanted above a bottom-lip head (M3x10 + key)
+WALL = 2.0                     # tube wall: 5 perimeters; bending stress stays < 2 MPa (statics)
 
 
 def _revolve_z(pts):
@@ -31,7 +32,7 @@ def _revolve_z(pts):
     return cq.Workplane("XZ").polyline(pts).close().revolve(360, (0, 0, 0), (0, 1, 0))
 
 
-def link(cls_a, cls_b, length, wall=3.0):
+def link(cls_a, cls_b, length, wall=WALL):
     A, B = P.FLANGES[cls_a], P.FLANGES[cls_b]
     lip = P.LIP_T
     top0 = length - lip                          # underside of the top lip

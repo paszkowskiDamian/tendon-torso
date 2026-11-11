@@ -69,6 +69,8 @@ class HingeSpec:
     tubes_through: int = 0   # how many Bowden tubes pass through (documentation / checks)
     rotor_cls: str = ""      # flange class of the rotor plate (default: same as cls)
     neck_extra: float = 0.0  # longer neck -> rotor plate further from the axis (more range)
+    bearing: tuple = P.B608  # drum bearings (d, D, B)
+    axle: str = "M8"         # stub axles (P.AXLES)
 
     @property
     def rcls(self):
@@ -85,11 +87,11 @@ class HingeSpec:
 
     @property
     def hub_half(self):
-        return self.cav + WALL + P.B608[2]
+        return self.cav + WALL + self.bearing[2]
 
     @property
     def gx(self):
-        return self.cav + WALL + P.B608[2] / 2
+        return self.cav + WALL + self.bearing[2] / 2
 
     @property
     def lug_in(self):
@@ -166,13 +168,14 @@ def base(s: HingeSpec):
     if s.cav >= 3:
         sx_ = s.cav - 1.0
         cuts.append(box(-sx_, sx_, -s.slot_y, s.slot_y, s.in_z - 1, s.boss_top + 1).edges("|Z").fillet(min(2.0, sx_ - 0.5)))
-    # M8 stub axles + captive nuts
+    # stub axles + captive nuts
+    ax = P.AXLES[s.axle]
     for sx in (1, -1):
         x0, x1 = sorted((sx * s.lug_in, sx * s.lug_out))
-        cuts.append(cyl_x(P.M8_CLR / 2, x0 - 1, x1 + 1))
+        cuts.append(cyl_x(ax["clr"] / 2, x0 - 1, x1 + 1))
         xm = (x0 + x1) / 2
-        cuts.append(box(xm - P.M8_NUT_T / 2, xm + P.M8_NUT_T / 2, -P.M8_NUT_AF / 2, P.M8_NUT_AF / 2,
-                        -P.M8_NUT_AF / 2 / math.cos(math.pi / 6), s.lug_r + 1))
+        cuts.append(box(xm - ax["nut_t"] / 2, xm + ax["nut_t"] / 2, -ax["nut_af"] / 2, ax["nut_af"] / 2,
+                        -ax["nut_af"] / 2 / math.cos(math.pi / 6), s.lug_r + 1))
     # mounting inserts on the underside
     if s.base_style == "torso":
         for x in (-(s.lug_out + 7), s.lug_out + 7):
@@ -211,8 +214,8 @@ def rotor_half(s: HingeSpec, side="A"):
     r_cav = s.r_hub - 8.0 if s.R > 25 else s.r_hub - 7.5
     cuts = [
         cyl_x(r_cav, -s.cav, 0.1),
-        teardrop_x(9.5, -s.cav - WALL - 0.1, -s.cav + 0.1),                    # axle / inner-race clearance
-        teardrop_x(P.B608[1] / 2 + P.FIT, -H - 0.1, -s.cav - WALL),            # 608 pocket
+        teardrop_x(s.bearing[1] / 2 - 1.5, -s.cav - WALL - 0.1, -s.cav + 0.1),  # axle / inner-race clearance
+        teardrop_x(s.bearing[1] / 2 + P.FIT, -H - 0.1, -s.cav - WALL),         # bearing pocket
         box(-(s.cav - 0.5), 0.1, -(s.slot_y + 2), s.slot_y + 2, 4, s.out_z + 1),
         sector_x(-s.cav, 0.1, s.r_hub + 3, sec0, sec1),
     ]
@@ -242,10 +245,11 @@ def rotor_half(s: HingeSpec, side="A"):
     cuts.append(cq.Workplane("YZ").workplane(offset=gx - w / 2).polyline(band).close().extrude(w))
     # lighten the side wall (only on big drums)
     if s.R >= 30:
-        r_l = (11.15 + s.R * math.cos(math.radians(32.5)) - 3) / 2 + 2
-        dl = min(10.0, (s.R * math.cos(math.radians(32.5)) - 3 - 11.15) - 4)
+        r_p = s.bearing[1] / 2 + P.FIT
+        r_l = (r_p + s.R * math.cos(math.radians(32.5)) - 3) / 2 + 2
+        dl = min(10.0, (s.R * math.cos(math.radians(32.5)) - 3 - r_p) - 4)
         for k in range(6):
-            yy, zz = yz(r_l, 60 * k)          # clear of the teardrop roof of the 608 pocket
+            yy, zz = yz(r_l, 60 * k)          # clear of the teardrop roof of the bearing pocket
             cuts.append(teardrop_x(dl / 2, -H - 1, -s.cav - WALL, yy, zz))
     # inserts in the top plate (from the top face down), only the ones on this half
     for a in P.bolt_angles(F["n"]):

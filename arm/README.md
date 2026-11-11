@@ -38,7 +38,7 @@ crank ×7 ──PTFE tubes──► shoulder beam ──► S1 ─ S2 ─ link �
 * **Hinge module** (`hinge.py`): base + two rotor halves.
   * **Base:**
     * a plate with heat-set inserts;
-    * two lugs with captive M8 nuts (the M8×20 stub axles go into 608 bearings);
+    * two lugs with captive nuts for the stub axles: M8×20 into 608 bearings on the shoulder (S1, S2), M5×16 into 625 bearings on the elbow and wrist (E, W1, W2);
     * a boss with two angled Bowden sockets aimed exactly along the drum tangents;
     * a slot that lets the tubes of the joints further out pass through.
   * **Rotor:** printed as two halves split on the motion plane, each flat on that face.
@@ -83,44 +83,44 @@ Two springs take most of the arm's weight off S1, so the S1 crank (and later its
   * Each spring hooks onto an **M5 eye bolt** through a post that is screwed to the table at y ≈ 290–340 mm.
   * The two nuts on the eye bolt tune the spring offset by ±20 mm.
 
-**Balance level.** The mass model is in `balance.py`. It takes the CAD volumes of every printed part. A 1.8 mm solid skin (4 walls) plus 40% infill gives an effective fill of 0.58. Bearings, M8 axles, inserts, bolts and the PTFE tubes are added as point masses.
+**Balance level.** The mass model is shared with `statics.py`. It takes the CAD volume and surface of every printed part: the skin (walls + top/bottom layers) prints solid, the rest at the part's infill (links 3 walls + 15%, modules 4 walls + 25%; see Print list). Bearings, axles, inserts, bolts and the PTFE tubes are added as point masses.
 
 | | |
 |---|---|
-| Mass moving with S1 | 2.00 kg (1.39 kg PETG + 0.61 kg hardware) |
-| COM below S1, arm straight | 389 mm, so m·g·d = **7.6 N·m** (12.2 N·m with 0.5 kg in the hand) |
-| Effective lever, elbow bent 0/60/115° | 389 / 351 / 283 mm |
+| Mass moving with S1 | 1.43 kg (0.96 kg PETG + 0.47 kg hardware) |
+| COM below S1, arm straight | 360 mm, so m·g·d = **5.1 N·m** (9.6 N·m with 0.5 kg in the hand) |
+| Effective lever, elbow bent 0/60/115° | 360 / 328 / 269 mm |
 
-A spring can only follow sin(S1). At full abduction (S2 = 100°) the arm's weight moment about S1 falls to about 2 N·m. So the spring level is the **minimax** over all S1 × S2 × E poses: k·a·b = 4.75 N·m for both sides together.
+A spring can only follow sin(S1). At full abduction (S2 = 100°) the arm's weight moment about S1 falls to well under half of that. So the spring level is the **minimax** over all S1 × S2 × E poses: k·a·b = 3.3 N·m for both sides together.
 
 **Result** (`tools/check_balance.py`, real sheave geometry):
 
 | | Without springs | With springs |
 |---|---|---|
-| Peak S1 holding torque (S1 × S2 × E ranges) | 7.6 N·m | **2.9 N·m (−62%)** |
-| Force on the S1 crank knob | 23.5 N | **8.9 N** |
-| With 0.5 kg payload | 12.2 N·m / 37 N | 7.4 N·m / 23 N |
+| Peak S1 holding torque (S1 × S2 × E ranges) | 5.1 N·m | **1.85 N·m (−63%)** |
+| Force on the S1 crank knob | 15.5 N | **5.7 N** |
+| With 0.5 kg payload | 9.6 N·m / 29.5 N | 6.4 N·m / 19.7 N |
 
-The springs don't act on S2: its peak stays 4.7 N·m.
+The springs don't act on S2: its peak stays 3.0 N·m.
 
 **Spring (one per side).**
 
 | Property | Value |
 |---|---|
 | Material | Music-wire extension spring |
-| Wire | Ø 1.4 mm |
+| Wire | Ø 1.2 mm |
 | OD | 15 mm |
 | Free length | 105 mm over the hooks |
-| Rate | k = 0.26 N/mm |
-| Active coils | about 60 |
-| Initial tension | ≤ 15 N |
-| Working load | 26–50 N |
-| Safe load | 63 N (45% of Rm in shear) |
-| Extension in use | 90–185 mm |
+| Rate | k = 0.18 N/mm |
+| Active coils | about 43 |
+| Initial tension | ≤ 10 N |
+| Working load | 17–34 N |
+| Safe load | 40 N (45% of Rm in shear) |
+| Extension in use | 80–175 mm (max length ≥ 290 mm) |
 
-* **Where to buy:** RS PRO 751938 is listed as 1.4 mm wire, 15 mm OD, 105 mm, 0.26 N/mm. Check its initial tension and maximum extended length (≥ 300 mm) on the datasheet before you buy it. Any catalogue spring with the same rate, OD and free length works.
-* **Initial tension does not spoil the balance.** The spring pulls with Fi + k·e. Moving the anchor by Fi/k makes that equal k·|AB|, as long as the spring stays open over the whole range. That needs Fi < k·|AB|min ≈ 26 N.
-* **No 2:1 tackle.** With a 1:1 run the cord pull stays at ≤ 50 N and the parts stay simple. The 185 mm extension fits along the table. A 2:1 tackle would halve the stroke but double the spring load and add a moving pulley.
+* **Where to buy:** any catalogue extension spring close to 0.18 N/mm, OD ~15 mm, ~105 mm free length. Before buying, check that initial tension is ≤ 10 N and maximum extended length is ≥ 290 mm. A rate within ±0.02 N/mm still keeps ≥ 62% balance (re-run `tools/check_balance.py` with your value in `balance.K_SPRING`).
+* **Initial tension does not spoil the balance.** The spring pulls with Fi + k·e. Moving the anchor by Fi/k makes that equal k·|AB|, as long as the spring stays open over the whole range. That needs Fi < k·|AB|min ≈ 18 N.
+* **No 2:1 tackle.** With a 1:1 run the cord pull stays at ≤ 35 N and the parts stay simple. The 175 mm extension fits along the table. A 2:1 tackle would halve the stroke but double the spring load and add a moving pulley.
 
 **Fitting and tuning.**
 1. Tie each cord to its yoke pin with a bowline loop.
@@ -161,14 +161,37 @@ Notable orientations:
 * print tolerances (bearing fits, heat-set insert holes);
 * how the tubes actually lie inside the links.
 
-## Loads (arm horizontal, 2 kg arm + 0.5 kg payload, static)
+## Weight optimisation
+
+Same mass model for both columns (CAD volume + surface, skin solid, per-part infill, hardware as point masses):
+
+| | Before | After |
+|---|---|---|
+| Printed PETG (4 walls + 40% everywhere → link/module profiles) | 1468 g | 1023 g |
+| Hardware | 704 g | 563 g |
+| **Arm total** | **2.17 kg** | **1.59 kg (−27%)** |
+| S1 worst-case torque (0.3 kg payload) | 10.4 N·m | 7.8 N·m (−25%) |
+| S1 peak with the balance springs (no payload) | 2.9 N·m | 1.85 N·m |
+
+What changed, by how much it helps the shoulder:
+
+* **Elbow and wrist hinges on 625 bearings + M5 axles** instead of 608 + M8 (−141 g of steel at the far end of the arm). They see at most 120 N; a 625 is rated 670 N static. Lugs shrink with them.
+* **Print profiles:** links 3 walls + 15%, modules 4 walls + 25%. Loads are tiny (link stress ≤ 1.3 MPa, insert pull ≤ 52 N), so 40% infill bought nothing.
+* **Link walls 3 → 2 mm.**
+* **Roll-stator flanges sized to the Bowden sockets** (XL lip Ø 126 → 113 mm, XM Ø 122 → 108 mm): the forearm and upper-arm cones are smaller.
+* Not done, on purpose: hollowing the solid-looking cones. At 15% infill their inside is mostly air already; a cavity would only add two more solid skins.
+
+## Loads (worst case over the workspace, 1.59 kg arm + 0.3 kg payload, no springs)
+
+From `python -m arm.statics` (full table in `docs/loads_report.txt`); cord = torque / drum radius + 20 N pretension.
 
 | | Joint torque | Cord tension | Force on the crank knob |
 |---|---|---|---|
-| S1 | ~10.6 N·m | ~250 N | ~32 N |
-| S2 | ~9.3 N·m | ~220 N | ~29 N |
-| E | ~3.6 N·m | ~100 N | ~13 N |
-| W1 | ~1.0 N·m | ~50 N | ~6 N |
+| S1 | 7.8 N·m | 207 N | 27 N |
+| S2 | 5.3 N·m | 147 N | 19 N |
+| S3 | 2.2 N·m | 100 N | 13 N |
+| E | 2.3 N·m | 83 N | 11 N |
+| W1 | 0.7 N·m | 57 N | 7 N |
 
 * **Cord margin:** 1 mm Dyneema breaks around 1000 N, so the shoulder has about a 4× margin. Use 1.2–1.5 mm cord if you have it: change `CORD_D` in `params.py` and re-export.
 * **Lock pins:** the arm won't hold itself up without them. Keep the pins in whenever you let go of a crank.
@@ -181,17 +204,22 @@ Notable orientations:
 .venv/bin/python -m arm.export
 ```
 
-**Material and settings:** PETG (or PLA+ for a first try), 0.2 mm layers, 4–6 walls, 40% gyroid. Use 100% infill or 6+ walls around the lugs, drums and the shoulder beam.
+**Material and settings:** PETG (or PLA+ for a first try), 0.2 mm layers, gyroid infill. Two profiles (the mass model uses the same ones):
+
+* **Links** (`link_*`): 3 walls, 4 top/bottom layers, 15% infill. Their 2 mm tube walls print solid anyway; the worst link bending stress is 1.3 MPa.
+* **Modules and everything else:** 4 walls, 25% infill. The shoulder beam gets 6 walls (see PRINT_LIST).
 
 ## Hardware
 
 | Qty | Part | Where |
 |---|---|---|
-| 24 | 608ZZ bearing (8×22×7) | 2 per hinge (10), 2 per crank (14) |
+| 18 | 608ZZ bearing (8×22×7) | 2 per shoulder hinge S1, S2 (4), 2 per crank (14) |
+| 6 | 625ZZ bearing (5×16×5) | 2 per elbow / wrist hinge E, W1, W2 |
 | 2 | 6806-2RS (30×42×7) | upper-arm rotation |
 | 2 | 6805-2RS (25×37×7) | forearm twist |
 | 4 | 623ZZ (3×10×4) + M3×12 bolt (self-taps into the inner cheek, no nut) | roll idlers |
-| 10 | M8×20 bolt, M8 nut, M8 washer | hinge stub axles |
+| 4 | M8×20 bolt, M8 nut, M8 washer | shoulder hinge stub axles |
+| 6 | M5×16 bolt, M5 nut, M5 washer | elbow + wrist hinge stub axles |
 | 7 | M8×70 (or M8×65) bolt + M8 nut | crank shafts |
 | 80 | M3 heat-set insert (4.0 mm hole, 5.5 deep) | module plates |
 | 76 | M3×10 bolt | links to modules |
@@ -201,7 +229,7 @@ Notable orientations:
 | 28 | M4×12 bolt + nut | crank feet to racks |
 | 7 | M4×30 bolt + nut | crank knobs |
 | ~28 | 4×30 wood screws | beam, racks and balance posts to the table |
-| 2 | Extension spring, music wire 1.4 × OD 15 × 105 mm, 0.26 N/mm (e.g. RS PRO 751938) | shoulder balance |
+| 2 | Extension spring, music wire 1.2 × OD 15 × 105 mm, 0.18 N/mm | shoulder balance |
 | 4 | 623ZZ (3×10×4) | balance sheaves (2 each) |
 | 2 | M3×20 bolt (axle, self-taps into the outer cheek) + 2 M3 washers each | balance sheaves |
 | 2 | M3×20 bolt + nut | balance cord pins in the yoke |
@@ -214,13 +242,13 @@ Notable orientations:
 ## Assembly order
 
 1. **Melt in all heat-set inserts** first.
-2. **Build each hinge.** Press the 608s into both rotor halves.
+2. **Build each hinge.** Press the bearings (608 on S1/S2, 625 on E/W1/W2) into both rotor halves.
    1. For each cord: tie a double overhand knot, pull the cord from the knot pocket through the chord hole into the groove, and lay it over the drum. Cord A goes on the −X half, cord B on the +X half; they wrap opposite ways.
-   2. Drop the M8 nuts into the lug slots, set the rotor halves between the lugs, add washers and screw in the M8×20 stub axles.
+   2. Drop the nuts into the lug slots, set the rotor halves between the lugs, add washers and screw in the stub axles (M8×20 or M5×16).
    3. Thread each cord down through its angled socket in the base.
 3. **Build each roll joint.**
    1. Press both thin-section bearings into the rotor, one from each side.
-   2. Slide the rotor over the stator tube and screw the retainer on top.
+   2. Slide the rotor over the stator tube and screw the retainer on top (3× M3×10, reached through the rotor's open top before the next link goes on). The rotor is held **only** by these bearings: the retainer clamps the upper inner race and preloads the pair, and the rotor never touches the stator plate (the visible gap is running clearance).
    3. Fit the idlers (623 + printed tyre on an M3×16).
    4. Knot each cord into its rotor anchor, lay it in its groove to the tangent point, over the idler and down through the socket.
 4. **Thread the tubes and bolt the chain together from the wrist upwards.**

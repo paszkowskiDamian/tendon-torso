@@ -173,12 +173,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   71.3,
-   71.3,
-   79.0
+   64.0,
+   64.0,
+   75.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0033,
+  "thin_wall_fraction": 0.0052,
   "pass": true
  },
  {
@@ -191,7 +191,7 @@
    95.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0012,
+  "thin_wall_fraction": 0.0028,
   "pass": true
  },
  {
@@ -204,7 +204,7 @@
    95.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0017,
+  "thin_wall_fraction": 0.0027,
   "pass": true
  },
  {
@@ -238,8 +238,8 @@
   "problems": [],
   "notes": [],
   "size": [
-   122.0,
-   122.0,
+   108.0,
+   108.0,
    42.6
   ],
   "worst_bridge_span": 2.0,
@@ -277,12 +277,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   122.0,
-   122.0,
+   108.0,
+   108.0,
    55.0
   ],
   "worst_bridge_span": 1.7,
-  "thin_wall_fraction": 0.0087,
+  "thin_wall_fraction": 0.0095,
   "pass": true
  },
  {
@@ -295,7 +295,7 @@
    41.0
   ],
   "worst_bridge_span": 1.7,
-  "thin_wall_fraction": 0.0033,
+  "thin_wall_fraction": 0.0037,
   "pass": true
  },
  {
@@ -308,7 +308,7 @@
    22.0
   ],
   "worst_bridge_span": 2.6,
-  "thin_wall_fraction": 0.0005,
+  "thin_wall_fraction": 0.0003,
   "pass": true
  },
  {
@@ -316,12 +316,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   126.0,
-   126.0,
+   113.0,
+   113.0,
    60.0
   ],
   "worst_bridge_span": 1.7,
-  "thin_wall_fraction": 0.0033,
+  "thin_wall_fraction": 0.0035,
   "pass": true
  },
  {
@@ -334,7 +334,7 @@
    64.0
   ],
   "worst_bridge_span": 1.7,
-  "thin_wall_fraction": 0.0053,
+  "thin_wall_fraction": 0.0047,
   "pass": true
  },
  {
@@ -347,7 +347,7 @@
    22.0
   ],
   "worst_bridge_span": 2.3,
-  "thin_wall_fraction": 0.0012,
+  "thin_wall_fraction": 0.001,
   "pass": true
  },
  {
@@ -373,7 +373,7 @@
    119.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0012,
+  "thin_wall_fraction": 0.0017,
   "pass": true
  },
  {
@@ -386,7 +386,7 @@
    119.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.001,
+  "thin_wall_fraction": 0.0013,
   "pass": true
  },
  {
@@ -412,7 +412,7 @@
    107.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0005,
+  "thin_wall_fraction": 0.0012,
   "pass": true
  },
  {
@@ -425,7 +425,7 @@
    107.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0013,
+  "thin_wall_fraction": 0.0012,
   "pass": true
  },
  {
@@ -459,12 +459,12 @@
   "problems": [],
   "notes": [],
   "size": [
-   126.0,
-   126.0,
+   113.0,
+   113.0,
    42.6
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0038,
+  "thin_wall_fraction": 0.004,
   "pass": true
  },
  {
@@ -513,10 +513,10 @@
   "size": [
    64.0,
    64.0,
-   60.0
+   57.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0042,
+  "thin_wall_fraction": 0.0045,
   "pass": true
  },
  {
@@ -529,7 +529,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0045,
+  "thin_wall_fraction": 0.0057,
   "pass": true
  },
  {
@@ -542,7 +542,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0045,
+  "thin_wall_fraction": 0.0055,
   "pass": true
  },
  {
@@ -552,10 +552,10 @@
   "size": [
    64.0,
    64.0,
-   60.0
+   57.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.0028,
+  "thin_wall_fraction": 0.004,
   "pass": true
  },
  {
@@ -568,7 +568,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.004,
+  "thin_wall_fraction": 0.0058,
   "pass": true
  },
  {
@@ -581,7 +581,7 @@
    63.0
   ],
   "worst_bridge_span": 2.0,
-  "thin_wall_fraction": 0.004,
+  "thin_wall_fraction": 0.0055,
   "pass": true
  }
 ]

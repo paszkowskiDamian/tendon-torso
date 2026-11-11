@@ -45,21 +45,16 @@ G = 9.81
 
 # ------------------------------------------------------------------ mass model
 PETG_RHO = 1.27e-3          # g/mm^3
-SHELL_T = 1.8               # 4 perimeters x 0.45 mm (+ top/bottom skins) printed solid
-INFILL = 0.40               # 40 % gyroid inside (README print settings)
 TUBE_G_PER_MM = 0.0214      # PTFE 4x2 (2.2 g/cm^3 * 9.42 mm^2) + 1 mm Dyneema inside
 M3_BOLT, M3_INSERT = 1.0, 0.6
-B608_G, B623_G = 12.0, 1.6
-M8_SET_G = 21.0             # M8x20 socket bolt 13.5 g + nut 5 g + washer 2.5 g
+B623_G = 1.6
 ROLL_BEARING_G = {"S3": 19.0, "F": 15.0}   # 61806-2RS / 61805-2RS catalogue masses
 
 
-def fill_factor(shape):
-    """Effective solid fraction of a printed part: a SHELL_T skin over the whole
-    surface is solid, the rest is INFILL. Thin parts come out (nearly) solid."""
-    v, a = shape.Volume(), shape.Area()
-    shell = min(v, 0.5 * a * SHELL_T)       # 0.5: opposite faces share thin walls
-    return (shell + INFILL * (v - shell)) / v
+def fill_factor(shape, part=""):
+    """Effective solid fraction of a printed part (one model for the whole arm: statics.py)."""
+    from .statics import fill_factor as ff
+    return ff(shape, part)
 
 
 @lru_cache(maxsize=None)
@@ -72,7 +67,7 @@ def _printed_masses():
             for k, w in parts.items():
                 s = w.val()
                 c = cq.Shape.centerOfMass(s)
-                m = s.Volume() * PETG_RHO * fill_factor(s)
+                m = s.Volume() * PETG_RHO * fill_factor(s, k)
                 out.append((name, which, k, m, np.array([c.x, c.y, c.z])))
     return out
 
@@ -85,9 +80,10 @@ def _hardware_masses():
         if isinstance(spec, H.HingeSpec):
             F = P.FLANGES[spec.cls]
             Fr = P.FLANGES[spec.rcls]
-            out.append((name, "mov", "608 x2", 2 * B608_G, np.zeros(3)))
+            from .statics import AXLE_G, BEARING_G
+            out.append((name, "mov", "bearings x2", 2 * BEARING_G[tuple(spec.bearing)], np.zeros(3)))
             if name != "S1":                     # S1 lugs are on the beam
-                out.append((name, "base", "M8 axles", 2 * M8_SET_G, np.zeros(3)))
+                out.append((name, "base", f"{spec.axle} axles", 2 * AXLE_G[spec.axle], np.zeros(3)))
             n_base = 4 if spec.base_style == "torso" else F["n"]
             out.append((name, "base", "inserts", n_base * M3_INSERT, np.array([0, 0, spec.in_z + 3])))
             out.append((name, "mov", "inserts", Fr["n"] * M3_INSERT, np.array([0, 0, spec.out_z - 3])))
@@ -186,19 +182,19 @@ def d_vs_elbow(es=(0, 30, 60, 90, 115), payload=0.0):
 
 
 # ------------------------------------------------------------------ design numbers
-# Balance level: the arm's S1 gravity moment at 90 deg is m*g*d = 7.6 N*m straight,
-# but only ~2 N*m with the shoulder fully abducted (S2 = 100) and the elbow bent. A
-# spring can only follow sin(S1), so K = k*a*b (both sides) is the MINIMAX value over
-# the S1 x S2 x E ranges (tools/check_balance.py re-derives it): 4.75 N*m.
-K_DESIGN = 4.75             # N*m, both sides together
+# Balance level: the arm's S1 gravity moment at 90 deg is m*g*d = 5.2 N*m straight
+# (after the weight optimisation), much less with the shoulder abducted and the elbow
+# bent. A spring can only follow sin(S1), so K = k*a*b (both sides) is the MINIMAX
+# value over the S1 x S2 x E ranges (tools/check_balance.py re-derives it): 3.3 N*m.
+K_DESIGN = 3.29             # N*m, both sides together
 
-# Spring (per side, 1:1, no tackle): RS PRO 751938 class - music wire 1.4 mm, OD 15 mm,
-# L0 105 mm over the hooks, rate 0.26 N/mm (~60 active coils). See README for the spec.
-K_SPRING = 0.26             # N/mm
+# Spring (per side, 1:1, no tackle): music wire 1.2 mm, OD ~15 mm, L0 ~105 mm over the
+# hooks, rate 0.18 N/mm (~43 active coils), initial tension <= 10 N. See README.
+K_SPRING = 0.18             # N/mm
 L0_SPRING = 105.0           # mm, free length inside the hooks
 FI_SPRING = 3.0             # N, nominal initial tension (tuned out with the anchor screw)
 OD_SPRING = 15.0
-SPRING_F_SAFE = 63.0        # N, ~45 % of Rm shear stress (d 1.4, D 13.6, Wahl 1.15): max working load
+SPRING_F_SAFE = 40.0        # N, ~45 % of Rm shear stress (d 1.2, D 13.8, Wahl 1.1): max working load
 
 X_S = 85.0                  # cord planes x = +-X_S (beam +-50, S1 base +-49.6)
 B_Z = 6.0                   # cord pin height in the spacer frame (link z = 0 on the S1 rotor plate)
@@ -448,7 +444,7 @@ def main():
     mp_g = sum(r[3] for r in pm)
     print("== mass model (everything that moves with S1) ==")
     print(f"  printed PETG: {vol:.0f} cm^3 solid -> {mp_g:.0f} g (effective fill {mp_g / (vol * 1000 * PETG_RHO):.2f}:"
-          f" {SHELL_T} mm solid skin + {INFILL:.0%} infill, per part)")
+          f" solid skin + infill per print profile, statics.PROFILES)")
     print(f"  hardware (bearings, axles, inserts, bolts, tubes): {sum(r[3] for r in hw):.0f} g")
     print(f"  total m = {m:.2f} kg, COM d = {d * 1000:.0f} mm below S1 (q = 0), m*g*d = {mgd:.2f} N*m")
     print(f"  with 0.5 kg at the tool: m = {mp:.2f} kg, d = {dp * 1000:.0f} mm, m*g*d = {mgdp:.2f} N*m")
