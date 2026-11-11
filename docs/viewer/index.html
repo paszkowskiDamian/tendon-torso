@@ -650,9 +650,11 @@ a { color: var(--accent); }
     }
     const cordN = tau => tau.map((t, i) => Math.abs(t) / (KJ[i].R / 1000) + STAT.pretension);
     function leverCost(q) { setQ(q); return gravTau().reduce((s, t, i) => s + (t / (KJ[i].R / 1000)) ** 2, 0); }
-    function lowerLevers(q, pt, Rt) {         // null-space descent: same hand pose, lower cord tensions
-      let cost = leverCost(q), alpha = 4;
-      for (let it = 0; it < 14 && alpha > 0.1; it++) {
+    // null-space descent: same hand pose, lower cord tensions. Local only (it starts from q),
+    // so the posture drifts continuously; while dragging it gets a small budget per event.
+    function lowerLevers(q, pt, Rt, maxIt = 14, aMax = 10) {
+      let cost = leverCost(q), alpha = Math.min(4, aMax);
+      for (let it = 0; it < maxIt && alpha > 0.1; it++) {
         const g = q.map((_, i) => { const a = q.slice(), b = q.slice(); a[i] += 0.5; b[i] -= 0.5; return leverCost(clampQ(a)) - leverCost(clampQ(b)); });
         setQ(q);
         const Jr = jacRows(Rt);
@@ -663,7 +665,7 @@ a { color: var(--accent); }
         let moved = false;
         while (alpha > 0.1) {
           const r = ikSolve(pt, clampQ(q.map((v, i) => v - ng[i] / big * alpha)), Rt, 0, true);
-          if (r.ok) { const c = leverCost(r.q); if (c < cost - 1e-6) { q = r.q; cost = c; moved = true; alpha = Math.min(alpha * 1.5, 10); break; } }
+          if (r.ok) { const c = leverCost(r.q); if (c < cost - 1e-6) { q = r.q; cost = c; moved = true; alpha = Math.min(alpha * 1.5, aMax); break; } }
           alpha *= 0.5;
         }
         if (!moved) break;
@@ -706,14 +708,36 @@ a { color: var(--accent); }
     // ---------- reach mode state
     const RANGE = { x: [-450, 750], y: [-600, 900], z: [-900, 450] };
     let reach = false, orient = false, lowLever = true, tgt = V(), tgtR = null, path = false, pathC = null;
-    function placeTarget(p, solve = true) {
+    // joint motion: small changes follow at once; a big one (a real change of arm posture,
+    // when the old one can't follow the hand any more) is animated instead of snapping
+    let tween = null;
+    function goTo(q) {
+      const from = vals.slice(), d = Math.max(...q.map((v, i) => Math.abs(v - from[i])));
+      if (d <= 12) { tween = null; vals = q.slice(); }
+      else tween = { from, to: q.slice(), t0: performance.now(), dur: Math.min(1800, 250 + 9 * d) };
+    }
+    function stepTween() {
+      if (!tween) return;
+      const s = Math.min(1, (performance.now() - tween.t0) / tween.dur), e = s * s * (3 - 2 * s);
+      vals = tween.from.map((v, i) => v + (tween.to[i] - v) * e);
+      if (s >= 1) tween = null;
+      vals.forEach((v, i) => { const sl = $('s' + i); if (sl) sl.value = Math.round(v); });
+      apply();
+    }
+    function placeTarget(p, solve = true, full = false) {   // full: settle the low-lever posture (on release)
       tgt.copy(p);
       ['x', 'y', 'z'].forEach(a => { const s = $('t' + a); if (s) { s.value = Math.round(p[a]); $('tv' + a).textContent = Math.round(p[a]) + ' mm'; } });
       giz.position.copy(p.clone().applyMatrix4(SF));
       if (!solve) return;
-      const r = ikSolve(tgt, vals.slice(), orient ? tgtR : null, path ? 2 : 6);
-      if (r.ok && lowLever && !path) r.q = lowerLevers(r.q, tgt, orient ? tgtR : null);
-      vals = r.q;
+      const Rt = orient ? tgtR : null;
+      const prev = tween ? tween.to.slice() : vals.slice();
+      // 1) follow the hand from the current posture (continuity first)
+      let r = ikSolve(tgt, prev, Rt, 0, true);
+      // 2) only if the arm can't follow from there: try other starting postures, and switch
+      //    posture only if that really reaches (else keep the continuous closest pose)
+      if (!r.ok) { const g = ikSolve(tgt, prev, Rt, path ? 2 : 6); if (g.ok) r = g; }
+      if (r.ok && lowLever && !path) r.q = full ? lowerLevers(r.q, tgt, Rt) : lowerLevers(r.q, tgt, Rt, 2, 3);
+      goTo(r.q);
       vals.forEach((v, i) => { const s = $('s' + i); if (s) s.value = Math.round(v); });
       marker.material.color.setHex(r.ok ? 0x2f9b5a : 0xd6452f);
       $('reachMsg').textContent = r.ok
@@ -742,7 +766,7 @@ a { color: var(--accent); }
         rig.joints.forEach((j, i) => { $('s' + i).disabled = reach; });
         if (reach) { setPlaying(false); placeTarget(currentTool(), false); tgtR = toolRot(); }
       };
-      $('leverOn').onchange = e => { lowLever = e.target.checked; if (reach) placeTarget(tgt.clone()); };
+      $('leverOn').onchange = e => { lowLever = e.target.checked; if (reach) placeTarget(tgt.clone(), true, true); };
       $('orientOn').onchange = e => {
         orient = e.target.checked; Object.values(rings).forEach(r => r.visible = orient);
         setQ(vals); tgtR = toolRot();
@@ -750,6 +774,7 @@ a { color: var(--accent); }
       ['x', 'y', 'z'].forEach(a => $('t' + a).oninput = e => {
         setPlaying(false); path = false; const p = tgt.clone(); p[a] = +e.target.value; placeTarget(p);
       });
+      ['x', 'y', 'z'].forEach(a => $('t' + a).onchange = () => { if (lowLever) placeTarget(tgt.clone(), true, true); });
       $('hereBtn').onclick = () => { path = false; setQ(vals); tgtR = toolRot(); placeTarget(currentTool(), false); };
       $('pathBtn').onclick = () => {
         setQ([45, 25, 0, 75, 0, 0, 0]); pathC = toolPos(); setQ(vals);
@@ -821,8 +846,13 @@ a { color: var(--accent); }
       }
       return true;
     }
-    function pointerUp() { const was = !!drag; drag = null; return was; }
+    function pointerUp() {
+      const was = !!drag; drag = null;
+      if (was && lowLever) placeTarget(tgt.clone(), true, true);   // finish the low-lever posture (animated)
+      return was;
+    }
     function frame() {                                      // keep the gimbal a constant size on screen
+      stepTween();
       if (giz.visible) { const s = camera.position.distanceTo(giz.position) / 1100; gizAx.scale.setScalar(s); marker.scale.setScalar(s); }
     }
 
