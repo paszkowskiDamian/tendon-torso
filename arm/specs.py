@@ -6,10 +6,11 @@ from . import params as P
 from .hinge import HingeSpec
 from .roll import RollSpec
 
-S1 = HingeSpec("S1", "L", R=42.0, cav=14.0, lo=-30, hi=120, lug_r=17, slot_y=6.5, base_style="torso", tubes_through=13, neck_extra=12)
+S1 = HingeSpec("S1", "L", R=42.0, cav=14.0, lo=-30, hi=120, lug_r=17, slot_y=6.5, base_style="torso", tubes_through=13, neck_extra=12,
+               neck_window=("hi",))
 S2 = HingeSpec("S2", "L", R=42.0, cav=12.0, lo=-10, hi=100, lug_r=17, slot_y=6.5, tubes_through=11)
 # elbow + wrist: 625 bearings on M5 stub axles (they see <= 135 N; a 625 is rated 670 N static)
-E = HingeSpec("E", "S", R=36.0, cav=8.0, lo=0, hi=115, lug_r=12, lug_t=10, slot_y=6.5, tubes_through=7, rotor_cls="S",
+E = HingeSpec("E", "S", R=36.0, cav=8.0, lo=0, hi=115, lug_r=12, lug_t=10, slot_y=6.5, tubes_through=7, rotor_cls="S", neck_window=("hi",),
               bearing=P.B625, axle="M5")
 W1 = HingeSpec("W1", "S", R=20.0, cav=5.0, lo=-60, hi=60, lug_r=10, lug_t=9, slot_y=6.5, tubes_through=3,
                bearing=P.B625, axle="M5")

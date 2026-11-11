@@ -14,7 +14,7 @@ Interactive 3D model: open `docs/viewer/` (tab *Arm · 7 DOF*), see the repo [RE
 | E | Elbow | hinge M | 0…+115° | 36 mm | 1.4 |
 | F | Forearm twist | roll (2× 6805) | ±85° | 25.5 mm | 1.5 |
 | W1 | Wrist flexion | hinge S | ±60° | 20 mm | 0.8 |
-| W2 | Wrist tilt | hinge S | ±30° | 20 mm | 0.4 |
+| W2 | Wrist tilt | hinge S | ±90° | 20 mm | 1.2 |
 | G | Gripper (one cord + spring) | 2 geared fingers | 0…62 mm | 20 mm | 0.3 |
 
 Upper arm is 300 mm (S2 axis to elbow), forearm 250 mm (elbow to wrist). The arm hangs about 0.9 m below the shoulder beam, so mount the beam on a high table, shelf or bench edge.
@@ -178,7 +178,7 @@ The springs don't act on S2: its peak stays 3.4 N·m.
 * one watertight body per part, fitting a 250 mm bed.
 
 Notable orientations:
-* **Hinge rotor halves** print **top plate down**. Their tube window opens upward, the bearing pockets are teardrops, and the drum top is covered by the neck. Near the top of the drum the cord runs through a short closed channel in the neck: thread it with a CA-stiffened tip after tying the knot.
+* **Hinge rotor halves** print **top plate down**. Their tube window (sized for the tube bends, see below) opens upward, the bearing pockets are teardrops, and the drum top is covered by the neck. Near the top of the drum the cord runs through a short closed channel in the neck: thread it with a CA-stiffened tip after tying the knot.
 * **Roll rotors** print top plate down.
 * **The crank spool** prints standing on its boss. Its grooves are 0.5 mm deep at 1.9 mm pitch, about 3.4 turns per cord.
 * **Crank frames** print foot down. The top beam has a 48° roof and the bearing holes are teardrops.
@@ -195,6 +195,17 @@ Notable orientations:
 * Cords from each tube exit to its drum tangent and along the groove touch nothing, in every hinge and roll joint.
 * Crank arms of neighbouring modules never touch, and the knob clears the table.
 * Every joint's center passage is big enough for the tubes that pass through it (13 at S1, down to 1 at W2, counting the gripper tube). The hinge slots grew for it: `slot_y` = 6.5 mm on S1, S2, E and W1.
+* **Tube bends through the hinges** (`tools/check_tube_bends.py`, section `bends`, slow): the tubes that pass through a hinge bend by the joint angle inside it. At every hinge limit the tube bundle (tubes side by side across the slot, extra rows stacked in the bending plane) is modelled as a straight run in the base slot, a circular bend and a straight run up the rotor opening. Two placements are tried: centred in both slots, and pushed to the outer side of the bend as far as the slots allow (where a bent tube actually rides). The innermost tube must bend at **R ≥ 19 mm**, the minimum bend radius of 4 × 2 mm PTFE tube (3/4", Pexco Altaflo 100 datasheet). Result: every hinge passes, the tightest are S1 at +120° and E at +115° with 25.7 mm on the innermost tube.
+
+  | Hinge, limit | Tubes (rows) | Free bend radius of the bundle | Innermost tube |
+  |---|---|---|---|
+  | S1 −30° / +120° | 13 (3) | 60 / 30 mm | 55.7 / 25.7 mm |
+  | S2 −10° / +100° | 11 (3) | 60 / 42 mm | 55.7 / 37.7 mm |
+  | E +115° | 7 (3) | 30 mm | 25.7 mm |
+  | W1 ±60° | 3 (3) | 50 mm | 45.7 mm |
+  | W2 ±90° | 1 | 36 mm | 36 mm |
+
+  What it took: the rotor's tube window through the drum sleeve is now widened on both sides by a band as wide as the base slot, so the whole bundle (not only its centre line) clears the sleeve where it enters the drum near the axis (W1 was fully blocked, W2 at ±90° too tight). On S1 and E (`neck_window=("hi",)` in `specs.py`) the window also opens all the way to the neck opening on the side of the big bend: there the curved bundle swings out of the cavity between the old window and the neck. Both cuts stay inside the cavity's x-range, so the grooves, cord anchors, bearing seats and plate inserts are untouched, and they add no roof in the plate-down print.
 * **Gripper:** fingers, pads and palm never touch over the whole opening (0–41°, 5° steps). The cord runs free from the socket to the drum, the spring runs free between the posts, the open stops end the travel, and the tool point equals the grasp centre. The arm's range and pose checks run with the fingers fully open (the widest pose).
 * The balance hardware (yoke, masts, sheaves, cords, springs, posts) touches nothing at the S1/S2 limits and in combined poses. That includes the beam, the S1 base and the crank racks. The yoke keeps clear of the upper arm at full abduction. **Reach limit added by the balance:** with the hand folded back over the shoulder (S2 > 90°, S3 < −70° and E > 105° all together), the wrist touches the −X mast. Every other combination clears it.
 

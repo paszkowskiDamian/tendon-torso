@@ -22,7 +22,10 @@ Local frame: joint axis = X, base below (z<0), rotor above (z>0), origin on the 
       (2.4 mm bridge) - the cord is threaded through it from the anchor;
     - the cavity end walls and the split face are vertical; the tube window
       is widened to cover every part of the cavity whose roof would be
-      steeper than 45 deg (it opens at the top of the print);
+      steeper than 45 deg (it opens at the top of the print). For the bends of
+      the passing tubes it is also widened by a slot-wide band on each side and,
+      on S1/E, opened up to the neck on the side of the big bend (tube_window,
+      HingeSpec.neck_window, tools/check_tube_bends.py); none of that adds a roof;
     - bearing pockets, the axle clearance hole and lightening holes are
       horizontal -> teardrops (50 deg roofs) pointing up the print (-Z).
 
@@ -71,6 +74,10 @@ class HingeSpec:
     neck_extra: float = 0.0  # longer neck -> rotor plate further from the axis (more range)
     bearing: tuple = P.B608  # drum bearings (d, D, B)
     axle: str = "M8"         # stub axles (P.AXLES)
+    # open the tube window up to the neck opening on the side of this limit ("hi"/"lo"):
+    # for big bends the passing tubes' curve leaves the cavity between the two
+    # (see tools/check_tube_bends.py)
+    neck_window: tuple = ()
 
     @property
     def rcls(self):
@@ -187,6 +194,23 @@ def base(s: HingeSpec):
 
 
 # ------------------------------------------------------------------ rotor
+def tube_window(s: HingeSpec, a0, a1):
+    """Tube window through the drum sleeve (cavity x-range only): the sector a0..a1 (deg,
+    rotor frame) widened on both sides by a band as wide as the base slot, so the whole
+    tube bundle - not just its centre line - clears the sleeve where the straight
+    base-side run enters the drum near the axis. The bands' faces are parallel to the
+    sector edges, so they print at the same slope."""
+    r = s.r_hub + 3
+    w = s.slot_y + 0.5
+    x0, x1 = -s.cav, 0.1
+    out = [sector_x(x0, x1, r, a0, a1)]
+    for a, side in ((a0, -90.0), (a1, 90.0)):
+        p0 = yz(w, a + side)
+        pts = [(0.0, 0.0), yz(r, a), (yz(r, a)[0] + p0[0], yz(r, a)[1] + p0[1]), p0]
+        out.append(cq.Workplane("YZ").workplane(offset=x0).polyline(pts).close().extrude(x1 - x0))
+    return out
+
+
 def rotor_half(s: HingeSpec, side="A"):
     """Rotor half. side A = the -X half as modelled. side B is returned already in place (+X half)."""
     F = P.FLANGES[s.rcls]
@@ -211,14 +235,22 @@ def rotor_half(s: HingeSpec, side="A"):
     # tube window: the joint sweep + margin, widened to [-138, -42] deg so that no part of
     # the cavity roof is steeper than 45 deg in the print (plate down = -Z up)
     sec0, sec1 = min(sec0, -138.0), max(sec1, -42.0)
+    # big bends: the curved tube bundle swings out of the cavity between the window and
+    # the neck opening -> open the window all the way to the neck on that side. Inside the
+    # cavity x-range only (the grooves, anchors and bearing seats are outboard of it); the
+    # end walls still carry the cord load into the neck, and in the print (plate down) the
+    # extra cut has no roof: everything above it is the open cavity / window.
+    if "hi" in s.neck_window:
+        sec0, sec1 = (-270.0, sec1) if side == "A" else (sec0, 90.0)
+    if "lo" in s.neck_window:
+        sec0, sec1 = (sec0, 90.0) if side == "A" else (-270.0, sec1)
     r_cav = s.r_hub - 8.0 if s.R > 25 else s.r_hub - 7.5
     cuts = [
         cyl_x(r_cav, -s.cav, 0.1),
         teardrop_x(s.bearing[1] / 2 - 1.5, -s.cav - WALL - 0.1, -s.cav + 0.1),  # axle / inner-race clearance
         teardrop_x(s.bearing[1] / 2 + P.FIT, -H - 0.1, -s.cav - WALL),         # bearing pocket
         box(-(s.cav - 0.5), 0.1, -(s.slot_y + 2), s.slot_y + 2, 4, s.out_z + 1),
-        sector_x(-s.cav, 0.1, s.r_hub + 3, sec0, sec1),
-    ]
+    ] + tube_window(s, sec0, sec1)
     # tendon groove + anchor
     w = 2.4
     gx = -s.gx
