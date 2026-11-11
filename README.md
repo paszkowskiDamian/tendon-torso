@@ -15,6 +15,7 @@ We build it up one joint at a time.
 | [J1b: 2-DOF, J1-S elbow + J2 wrist, both motors remote (J2 via Bowden)](joints/j1b-2dof/) | designed, STL ready, **not printed/tested yet** |
 | [**Two 7-DOF arms + grippers on a torso**](arm/), shoulder (3), elbow, forearm twist, wrist (2), two-finger gripper on one cord; 16 servo drive units in the torso column | designed, all 57 part files print-ready and CAD-checked, **not printed yet** |
 | Second arm, motors | see [roadmap](docs/roadmap.md) |
+| [MuJoCo simulation](docs/sim.md): both arms on the torso, pick-and-place scene, scripted IK demos, LeRobot dataset recording, ACT training + evaluation | runs; scripted demos 100 %, ACT policy trained in sim 84 % on unseen scenes |
 
 ## Interactive viewer
 
@@ -31,6 +32,7 @@ joints/j1b-2dof/      J1b: J1-S + J2 wrist module + Bowden drive module
 joints/common/        shared CAD helpers
 arm/                  the two 7-DOF arms + grippers: modules, links, gripper, drive units, torso, STLs, build guide
 arm/kinematics.py     forward + inverse kinematics (python -m arm.ik X Y Z), see docs/kinematics.md
+sim/                  MuJoCo model built from the CAD, pick-and-place env, demo recorder, policy evaluator (docs/sim.md)
 tools/                preview renders + collision / clearance checks
 ```
 

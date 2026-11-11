@@ -1,0 +1,50 @@
+<!-- Pick-and-place scene: the two-arm robot (robot.xml) at a table.
+     World = TORSO frame in metres: table top z = 0, -Y = forwards, shoulders at x = +-0.175, z = 0.65.
+     The cube and the bin are placed by sim/env.py at every reset. -->
+<mujoco model="tendon-torso pick-and-place">
+  <include file="robot.xml"/>
+
+  <visual>
+    <headlight ambient="0.35 0.35 0.35" diffuse="0.5 0.5 0.5" specular="0.1 0.1 0.1"/>
+    <global offwidth="1280" offheight="720" azimuth="-110" elevation="-25"/>
+    <quality shadowsize="2048"/>
+  </visual>
+
+  <asset>
+    <texture name="sky" type="skybox" builtin="gradient" rgb1="0.25 0.28 0.32" rgb2="0.08 0.09 0.11" width="256" height="256"/>
+    <texture name="wood" type="2d" builtin="flat" rgb1="0.55 0.42 0.30" width="64" height="64"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.56 0.44 0.32" rgb2="0.52 0.40 0.29" width="256" height="256"/>
+    <material name="table" texture="grid" texrepeat="8 8" reflectance="0"/>
+    <material name="bin" rgba="0.20 0.45 0.80 1"/>
+  </asset>
+
+  <worldbody>
+    <light name="key" pos="0.6 -1.2 2.0" dir="-0.3 0.5 -1" diffuse="0.7 0.7 0.7" castshadow="true"/>
+    <light name="fill" pos="-0.8 -0.6 1.6" dir="0.4 0.3 -1" diffuse="0.3 0.3 0.3" castshadow="false"/>
+
+    <!-- table: top at z = 0 -->
+    <geom name="table" type="box" pos="0 -0.25 -0.02" size="0.6 0.45 0.02" material="table"
+          contype="1" conaffinity="3" friction="0.8 0.01 0.001"/>
+
+    <!-- cameras: overhead (looking straight down at the work area) and front (facing the robot) -->
+    <camera name="top" pos="0 -0.25 1.25" xyaxes="1 0 0 0 1 0" fovy="50"/>
+    <camera name="front" pos="0 -1.15 0.75" xyaxes="1 0 0 0 0.45 0.89" fovy="55"/>
+
+    <!-- the object: a 35 mm cube -->
+    <body name="cube" pos="-0.2 -0.25 0.0175">
+      <freejoint name="cube"/>
+      <geom name="cube" type="box" size="0.0175 0.0175 0.0175" mass="0.05" rgba="0.90 0.25 0.20 1"
+            contype="1" conaffinity="3" friction="1.0 0.01 0.001" condim="4" solref="0.004 1"/>
+    </body>
+
+    <!-- the target: a shallow open bin (inner 110 x 110, walls 30 high), moved by the env (mocap) -->
+    <body name="bin" mocap="true" pos="-0.12 -0.36 0">
+      <geom type="box" size="0.065 0.065 0.003" pos="0 0 0.003" material="bin" contype="1" conaffinity="3"/>
+      <geom type="box" size="0.065 0.004 0.015" pos="0 0.061 0.015" material="bin" contype="1" conaffinity="3"/>
+      <geom type="box" size="0.065 0.004 0.015" pos="0 -0.061 0.015" material="bin" contype="1" conaffinity="3"/>
+      <geom type="box" size="0.004 0.057 0.015" pos="0.061 0 0.015" material="bin" contype="1" conaffinity="3"/>
+      <geom type="box" size="0.004 0.057 0.015" pos="-0.061 0 0.015" material="bin" contype="1" conaffinity="3"/>
+      <site name="bin" pos="0 0 0.006" size="0.01" rgba="0 1 0 0.3" group="3"/>
+    </body>
+  </worldbody>
+</mujoco>

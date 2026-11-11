@@ -3,3 +3,7 @@ trimesh
 matplotlib
 rtree
 networkx
+mujoco>=3.3
+imageio
+imageio-ffmpeg
+# recording LeRobot datasets: lerobot[dataset]==0.7.0 (training: see docs/sim.md)
