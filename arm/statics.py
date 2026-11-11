@@ -11,7 +11,8 @@ holes included) prints solid, the rest at the part's infill (PROFILES: links
 3 walls + 15 % gyroid, modules 4 walls + 25 %), so thin walls come out solid
 and only chunky parts gain from low infill. Each part's centre of mass comes
 from the CAD solid. Hardware (bearings, bolts, inserts, PTFE tubes
-running through) is added per element. PAYLOAD sits at the tool point.
+running through) is added per element. The gripper is the last chain element
+(gripper.py, fingers modelled open); PAYLOAD is the object it holds, at the tool point.
 
 The model is measured once from the CAD and cached in `arm/mass_model.json`.
 Everything else (torques, loads) is fast pure numpy on top of `arm/kinematics.py`.
@@ -50,7 +51,7 @@ PROFILES = {             # print profile: (solid skin mm, infill)   -> PRINT_LIS
     "link": (1.3, 0.15),       # 3 walls x 0.42 + 4 top/bottom layers, 15 % gyroid
     "module": (1.8, 0.25),     # 4 walls x 0.45, 25 % gyroid (inserts, bearing seats)
 }
-PAYLOAD = 0.3          # kg at the tool point (gripper + object)
+PAYLOAD = 0.3          # kg at the tool point: the object in the gripper (the gripper itself is in the chain)
 PRETENSION = 20.0      # N per cord
 TUBE_G_PER_MM = 0.021  # PTFE 2x4 mm
 KNOB_R = 62.0          # mm (crank arm)
@@ -58,6 +59,8 @@ SPOOL_R = 8.0
 
 # hardware masses (g)
 HW = {"608": 12.0, "625": 4.5, "6806": 22.0, "6805": 16.0, "623": 2.0, "insert": 0.6, "m3": 1.0}
+# gripper hardware: 4 M3x10 (palm), 2 M3x25 + nyloc (pivots), 2 M3x6 (pads), opening spring
+GRIPPER_HW_G = 4 * 1.0 + 2 * (1.9 + 0.4) + 2 * 0.6 + 0.4
 AXLE_G = {"M8": 21.0, "M5": 5.0}   # stub axle set: socket bolt + nut (+ washer)
 BEARING_G = {(8.0, 22.0, 7.0): HW["608"], (5.0, 16.0, 5.0): HW["625"]}
 
@@ -83,8 +86,10 @@ def build_mass_model():
     from .hinge import HingeSpec
     from .roll import RollSpec
     els = []
+    from .gripper import GripperSpec
     names = [n for n, _, _ in A.CHAIN]
     joint_idx = {j: names.index(j) for j in K.JOINTS}
+    g_idx = next(i for i, (_, s, _) in enumerate(A.CHAIN) if isinstance(s, GripperSpec))
     for idx, (name, spec, _) in enumerate(A.CHAIN):
         st, mv = A.element_parts(name, spec)
 
@@ -108,14 +113,18 @@ def build_mass_model():
             b = "6806" if spec.bearing[0] >= 30 else "6805"
             hw_m += HW[b] + P.FLANGES[spec.rotor_cls]["n"] * HW["insert"]
             hw_s += HW[b] + 2 * (HW["623"] + HW["m3"]) + P.FLANGES[spec.cls]["n"] * HW["insert"]
+        elif isinstance(spec, GripperSpec):
+            hw_s += GRIPPER_HW_G
         else:
             ca, cb, _ = spec
             hw_s += (P.FLANGES[ca]["n"] + P.FLANGES[cb]["n"]) * HW["m3"]
-        # PTFE tubes running through this element: those of every joint at or after it
-        n_tubes = 2 * sum(1 for j in K.JOINTS if joint_idx[j] >= idx)
+        # PTFE tubes running through this element: those of every joint at or after it,
+        # + the gripper tube (through everything up to the gripper palm)
+        n_tubes = 2 * sum(1 for j in K.JOINTS if joint_idx[j] >= idx) + (1 if idx < g_idx else 0)
         hw_s += n_tubes * TUBE_G_PER_MM * (z_out - z_in)
         # hardware sits roughly on the axis, mid element
-        cs = (cs * ms + np.array([0, 0, (z_in + 0) / 2]) * hw_s) / (ms + hw_s) if ms + hw_s else cs
+        c_hw = np.array([0, 0, 20.0 if isinstance(spec, GripperSpec) else (z_in + 0) / 2])
+        cs = (cs * ms + c_hw * hw_s) / (ms + hw_s) if ms + hw_s else cs
         cm = (cm * mm + np.array([0, 0, z_out / 2]) * hw_m) / (mm + hw_m) if mm + hw_m else cm
         els.append({"name": name, "m_static_g": ms + hw_s, "com_static": cs.tolist(),
                     "m_moving_g": mm + hw_m, "com_moving": cm.tolist(),
@@ -215,6 +224,7 @@ def element_loads(q_deg, payload=PAYLOAD):
     """Loads on every element for pose q (dict per element name)."""
     from . import assembly as A
     from . import params as P
+    from .gripper import GripperSpec
     from .hinge import HingeSpec
     from .roll import RollSpec
     out = {}
@@ -249,6 +259,8 @@ def element_loads(q_deg, payload=PAYLOAD):
                      bearing_N=float(np.linalg.norm(Fp) / 2 + np.linalg.norm(Mp) / s + (T + PRETENSION) / 2),
                      axial_N=float(abs(w["F"] @ a)))
             fl = P.FLANGES[spec.cls]
+        elif isinstance(spec, GripperSpec):
+            fl = P.FLANGES[spec.cls]               # palm bolted on the W2 plate
         else:
             ca, cb, L = spec
             fa, fb = P.FLANGES[ca], P.FLANGES[cb]

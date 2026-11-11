@@ -10,13 +10,13 @@ All numbers come from the CAD chain in `arm/assembly.py`. `check_ik.py` confirms
   * origin on the S1 (shoulder flexion) axis;
   * **+X outwards** (the way abduction lifts the arm), **+Y forwards** (the way flexion lifts it), **+Z up**;
   * millimetres and degrees.
-* At **q = 0** the arm hangs straight down, and the tool point is at (0, 0, −927).
-* **Tool point:** the centre of the W2 plate (gripper mount) plus `TOOL_OFFSET` = 60 mm along the hand axis.
+* At **q = 0** the arm hangs straight down, and the tool point is at (0, 0, −939).
+* **Tool point:** the centre of the W2 plate (gripper mount) plus `TOOL_OFFSET` = 72 mm along the hand axis: the grasp centre between the gripper pads (`arm/gripper.py`, `GRASP_Z`).
 * **Joint vector:** q = (q₁ … q₇) = (S1 shoulder flexion, S2 abduction, S3 upper-arm rotation, E elbow, F forearm twist, W1 wrist flexion, W2 wrist tilt).
 
 ## 2. Forward kinematics
 
-Every element of the chain (13 in all: 7 joints and 6 links) is
+Every element of the chain (14 in all: 7 joints, 6 links and the gripper, whose a = b = 0) is
 
 $$A_i(q_i) = R_z(m_i)\; T_z(a_i)\; J_i(q_i)\; T_z(b_i)$$
 
@@ -40,18 +40,19 @@ where:
 | 11 | W1 | hinge, Rx | 0° | 47 | 41 | ±60° |
 | 12 | link | – | 0° | 0 | 22 | |
 | 13 | W2 | hinge, Rx | 90° | 47 | 41 | ±30° |
+| 14 | gripper | – | 0° | 0 | 0 | (fingers 0…41°) |
 
 All seven axes cross the arm's centreline, and $R_z$ commutes with $T_z$. The chain therefore collapses to joint-to-joint distances along the arm:
 
 $$
-{}^{S}T_{tool}(q) = R_x(q_1)\,T_z(166)\,R_z(90°)\,R_x(q_2)\,T_z(130)\,R_z(q_3)\,T_z(170)\,R_z(90°)\,R_x(q_4)\,T_z(119)\,R_z(q_5)\,T_z(131)\,R_x(q_6)\,T_z(110)\,R_z(90°)\,R_x(q_7)\,T_z(101)
+{}^{S}T_{tool}(q) = R_x(q_1)\,T_z(166)\,R_z(90°)\,R_x(q_2)\,T_z(130)\,R_z(q_3)\,T_z(170)\,R_z(90°)\,R_x(q_4)\,T_z(119)\,R_z(q_5)\,T_z(131)\,R_x(q_6)\,T_z(110)\,R_z(90°)\,R_x(q_7)\,T_z(113)
 $$
 
 followed by a fixed flip from the hanging chain into the shoulder frame (the arm points down, so the chain's $z$ is $-Z$). The distances between the axes are:
 
 | | S1→S2 | S2→S3 | S3→E | E→F | F→W1 | W1→W2 | W2→tool |
 |---|---|---|---|---|---|---|---|
-| mm | 166 | 130 | 170 | 119 | 131 | 110 | 101 |
+| mm | 166 | 130 | 170 | 119 | 131 | 110 | 113 |
 
 Upper arm (S2→E) = 300 mm, forearm (E→W1) = 250 mm.
 
@@ -100,7 +101,7 @@ Measured by `tools/check_ik.py` on 150 random reachable poses, each solved from 
 | position | 150 / 150 | 0.48 mm | ~3 ms |
 | position + orientation | 150 / 150 | 0.50 mm, 0.19° | ~4 ms |
 
-**Workspace** (shoulder frame): x −465…759, y −636…916, z −918…480 mm. The tool reaches 167–926 mm from the S1 axis.
+**Workspace** (shoulder frame): x −476…771, y −647…928, z −930…491 mm. The tool reaches 167–938 mm from the S1 axis.
 
 ## 5. From joint angles to cranks
 

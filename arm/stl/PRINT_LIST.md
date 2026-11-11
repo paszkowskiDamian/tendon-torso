@@ -28,15 +28,15 @@
 | `link_e_f.stl` | 1 | 100 x 100 x 55 | link S->ML, 55 mm - bottom lip down, 48 deg cone under the top lip |
 | `link_forearm.stl` | 1 | 64 x 64 x 41 | link S->S, 41 mm - bottom lip down, 48 deg cone under the top lip |
 | `link_w1_w2.stl` | 1 | 64 x 64 x 22 | link S->S, 22 mm - bottom lip down, 48 deg cone under the top lip |
-| `crank_frame.stl` | 7 | 51 x 80 x 132 | crank frame - foot down (teardrop bearing holes, 48 deg roof under the beam) |
-| `crank_spool.stl` | 7 | 21 x 21 x 33 | crank spool - standing on its small -X boss, 0.12 mm layers, brim |
-| `crank_socket_block_a.stl` | 7 | 32 x 14 x 22 | socket / tension block for cord A (1 M4x45 + nut) - nut trap down |
-| `crank_socket_block_b.stl` | 7 | 32 x 14 x 22 | socket / tension block for cord B (1 M4x45 + nut) - nut trap down |
-| `crank_tube_clip.stl` | 7 | 21 x 26 x 18 | tube clip on the crank top, under both tension screw heads - plate down |
-| `crank_arm.stl` | 7 | 82 x 26 x 11 | crank arm - flat |
-| `crank_nut_cup.stl` | 7 | 24 x 24 x 13 | M8 nut cup - nut pocket down |
-| `crank_lock_pin.stl` | 7 | 12 x 12 x 18 | lock pin - head up |
-| `crank_knob.stl` | 7 | 14 x 14 x 26 | crank knob |
+| `crank_frame.stl` | 8 | 51 x 80 x 132 | crank frame - foot down (teardrop bearing holes, 48 deg roof under the beam) |
+| `crank_spool.stl` | 8 | 21 x 21 x 33 | crank spool - standing on its small -X boss, 0.12 mm layers, brim |
+| `crank_socket_block_a.stl` | 8 | 32 x 14 x 22 | socket / tension block for cord A (1 M4x45 + nut) - nut trap down |
+| `crank_socket_block_b.stl` | 7 | 32 x 14 x 22 | socket / tension block for cord B (1 M4x45 + nut), not on the gripper crank - nut trap down |
+| `crank_tube_clip.stl` | 8 | 21 x 26 x 18 | tube clip on the crank top, under both tension screw heads - plate down |
+| `crank_arm.stl` | 8 | 82 x 26 x 11 | crank arm - flat |
+| `crank_nut_cup.stl` | 8 | 24 x 24 x 13 | M8 nut cup - nut pocket down |
+| `crank_lock_pin.stl` | 8 | 12 x 12 x 18 | lock pin - head up |
+| `crank_knob.stl` | 8 | 14 x 14 x 26 | crank knob |
 | `torso_shoulder_beam.stl` | 1 | 100 x 240 x 52 | shoulder beam - floor down, 6 walls |
 | `torso_crank_rack.stl` | 3 | 216 x 96 x 5 | crank rack (3 cranks each) |
 | `torso_tube_comb.stl` | 2 | 92 x 40 x 19 | labelled tube comb, snaps into the beam windows at y=33 and y=60 - plate down, labels up |
@@ -45,3 +45,7 @@
 | `balance_mast_l.stl` | 1 | 56 x 42 x 76 | balance pulley mast, -X side (mirror) - front face down |
 | `balance_sheave.stl` | 2 | 25 x 25 x 9 | balance sheave on 2x 623 - flat (48 deg groove ceiling) |
 | `balance_post.stl` | 2 | 40 x 62 x 66 | balance spring anchor post - foot down (M5 hole is a teardrop) |
+| `gripper_palm.stl` | 1 | 62 x 62 x 37 | gripper palm (4x M3x10 into W2, 2x M3x25 finger pivots, Bowden socket) - plate down |
+| `gripper_finger_a.stl` | 1 | 34 x 74 x 14 | gripper finger A (cord drum + gear) - gear side down |
+| `gripper_finger_b.stl` | 1 | 34 x 73 x 14 | gripper finger B (gear) - gear side down |
+| `gripper_pad.stl` | 2 | 11 x 18 x 34 | gripper pad sleeve (TPU 95A or PETG), 1x M3x6 each - open end down |

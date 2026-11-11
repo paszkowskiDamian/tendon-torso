@@ -234,10 +234,53 @@ def check_balance():
     return ok
 
 
+def check_gripper():
+    """Gripper: finger/pad/palm interference over the whole opening, the cord and the
+    opening spring run free, the open stops work, tool point = grasp centre, forces."""
+    from arm import gripper as G
+    from arm import kinematics as K
+    from arm.cad import rod
+    print("== gripper ==")
+    ok = True
+    good = abs(K.TOOL_OFFSET - G.GRASP_Z) < 1e-6
+    print(f"  tool point {K.TOOL_OFFSET:.1f} mm past the W2 plate = grasp centre {G.GRASP_Z:.1f}  {'ok' if good else 'MISMATCH'}")
+    ok &= good
+    own = ({"gripper_finger_a", "gripper_pad_a"}, {"gripper_finger_b", "gripper_pad_b"})
+    cord = rod((0, 0, G.BOSS_TOP + 0.3), (0, 0, G.ZP), P.CORD_D)
+    yc = (G.SPRING[0] + G.FY) / 2            # spring centre plane
+    for th in [0, 5, 10, 15, 20, 25, 30, 35, G.THETA_MAX]:
+        p = G.parts(th)
+        hits = [(a, b, round(v, 2)) for a, b in itertools.combinations(p, 2)
+                if {a, b} not in own and (v := vol(p[a], p[b])) > 0.01]
+        # the cord runs up the axis onto finger A's drum (touches it only at the tangent point)
+        hits += [("cord", k, round(v, 2)) for k, w in p.items() if (v := vol(cord, w)) > 0.05]
+        # the opening spring between the two posts (body without the hooks)
+        L, F, _ = G.spring_state(th)
+        x = L / 2 - G.POST_R - 2.5
+        ang = math.radians(th)
+        z = G.ZP + G.TAIL[0] * math.sin(ang) + G.TAIL[1] * math.cos(ang)
+        spring = rod((-x, yc, z), (x, yc, z), G.SPRING_OD)
+        hits += [("spring", k, round(v, 2)) for k, w in p.items() if (v := vol(spring, w)) > 0.01]
+        print(f"  opening {th:4.1f} deg ({G.opening(th):4.1f} mm): {'clear' if not hits else hits}")
+        ok &= not hits
+    p = G.parts(G.THETA_MAX + 2)
+    stop = vol(p["gripper_palm"], p["gripper_finger_a"]) > 0.05 and vol(p["gripper_palm"], p["gripper_finger_b"]) > 0.05
+    print(f"  open stops on the palm end the travel at {G.THETA_MAX:.0f} deg: {'ok' if stop else 'NO STOP'}")
+    ok &= stop
+    w = G.opening(G.THETA_MAX)
+    T10 = max(G.cord_for_force(10.0, th) for th in range(0, int(G.THETA_MAX) + 1))
+    pull = min(2 * G.spring_state(th)[2] / G.R_C for th in range(0, int(G.THETA_MAX) + 1))
+    print(f"  opening 0..{w:.0f} mm (need >= 60); cord for 10 N per pad <= {T10:.0f} N (need < 60);"
+          f" spring pull-back on the cord >= {pull:.1f} N (need >= 1)")
+    ok &= w >= 60 and T10 < 60 and pull >= 1.0
+    return ok
+
+
 if __name__ == "__main__":
-    which = sys.argv[1:] or ["tubes", "tensions", "ranges", "combos", "cranks", "balance"]
+    which = sys.argv[1:] or ["tubes", "tensions", "gripper", "ranges", "combos", "cranks", "balance"]
     res = {}
     for w in which:
         res[w] = {"ranges": check_ranges, "combos": check_combos, "cranks": check_cranks,
-                  "tubes": check_tubes, "tensions": check_tensions, "balance": check_balance}[w]()
+                  "tubes": check_tubes, "tensions": check_tensions, "balance": check_balance,
+                  "gripper": check_gripper}[w]()
     print("\nRESULT:", {k: ("PASS" if v else "FAIL") for k, v in res.items()})

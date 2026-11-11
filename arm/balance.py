@@ -35,6 +35,7 @@ import cadquery as cq
 import numpy as np
 
 from . import assembly as A
+from . import gripper as GR
 from . import hinge as H
 from . import params as P
 from . import roll as R
@@ -93,6 +94,9 @@ def _hardware_masses():
             out.append((name, "base", "idlers", 2 * (B623_G + 1.5), np.array([0, 0, zm])))
             out.append((name, "base", "inserts", 8 * M3_INSERT, np.array([0, 0, spec.in_z + 3])))
             out.append((name, "mov", "inserts", 8 * M3_INSERT, np.array([0, 0, spec.out_z - 3])))
+        elif isinstance(spec, GR.GripperSpec):
+            from .statics import GRIPPER_HW_G
+            out.append((name, "base", "gripper bolts, pivots, spring", GRIPPER_HW_G, np.array([0, 0, 20.0])))
         else:
             ca, cb, _ = spec
             L = A.link_length(name, spec)
@@ -103,8 +107,8 @@ def _hardware_masses():
     names = [n for n, _, _ in A.CHAIN]
     for i, (name, spec, _) in enumerate(A.CHAIN):
         z0, z1 = A.element_io(spec, name)
-        if isinstance(spec, (H.HingeSpec, R.RollSpec)):
-            n = spec.tubes_through
+        if isinstance(spec, (H.HingeSpec, R.RollSpec, GR.GripperSpec)):
+            n = spec.tubes_through          # (the gripper tube ends in the palm: 0)
         else:
             nxt = specs[names[i + 1]]
             n = nxt.tubes_through + 2
@@ -182,15 +186,17 @@ def d_vs_elbow(es=(0, 30, 60, 90, 115), payload=0.0):
 
 
 # ------------------------------------------------------------------ design numbers
-# Balance level: the arm's S1 gravity moment at 90 deg is m*g*d = 5.2 N*m straight
-# (after the weight optimisation), much less with the shoulder abducted and the elbow
+# Balance level: the arm's S1 gravity moment at 90 deg is m*g*d = 5.5 N*m straight
+# (weight-optimised arm + gripper), much less with the shoulder abducted and the elbow
 # bent. A spring can only follow sin(S1), so K = k*a*b (both sides) is the MINIMAX
-# value over the S1 x S2 x E ranges (tools/check_balance.py re-derives it): 3.3 N*m.
-K_DESIGN = 3.29             # N*m, both sides together
+# value over the S1 x S2 x E ranges (tools/check_balance.py re-derives it). With the
+# masts fixed (a = 113 mm) only k may change: a k-scan 0.16..0.23 N/mm gives 61-63 %
+# everywhere (the anchor screw absorbs the rest); k = 0.185 puts the screw at nominal.
+K_DESIGN = 3.39             # N*m, both sides together (= 2 k a b, keeps a = 113 mm)
 
 # Spring (per side, 1:1, no tackle): music wire 1.2 mm, OD ~15 mm, L0 ~105 mm over the
-# hooks, rate 0.18 N/mm (~43 active coils), initial tension <= 10 N. See README.
-K_SPRING = 0.18             # N/mm
+# hooks, rate 0.185 N/mm (~42 active coils), initial tension <= 10 N. See README.
+K_SPRING = 0.185            # N/mm
 L0_SPRING = 105.0           # mm, free length inside the hooks
 FI_SPRING = 3.0             # N, nominal initial tension (tuned out with the anchor screw)
 OD_SPRING = 15.0

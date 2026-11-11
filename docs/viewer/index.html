@@ -191,6 +191,7 @@ a { color: var(--accent); }
         <li><b>Every joint</b> gets its own colored pair of PTFE tubes. They run from its crank, through the shoulder beam, and down the core of every joint before it.</li>
         <li><b>Reach mode</b> solves the inverse kinematics in the browser (the same method as <code>arm/kinematics.py</code>). Drag the gimbal arrows or the ball to move the hand; turn on orientation and drag the rings to twist it. The 7 joint angles and crank turns follow.</li>
         <li><b>Each crank</b> turns a spool. A pin through the crank arm locks it every 10°, and its turns = joint angle × ratio. Later each crank can be swapped for a NEMA17 + spool.</li>
+        <li><b>Gripper:</b> one cord in one tube (the 8th crank) pulls finger A's drum and closes it; two gear sectors close finger B with it. A spring between the finger tails opens both. Drag the <i>Gripper opening</i> slider.</li>
       </ol>
     </div>
     <p class="sub" style="font-size:12px">Source, STL files and build guides: <a href="https://github.com/paszkowskiDamian/tendon-torso" target="_blank" rel="noopener">github.com/paszkowskiDamian/tendon-torso</a></p>
@@ -413,6 +414,10 @@ a { color: var(--accent); }
     const COL = { base: 0x8c96a0, rotor_a: 0x5aa469, rotor_b: 0x77bb85, rotor: 0x5aa469, stator: 0x8c96a0,
       retainer: 0x30353b, idler: 0x30353b, link: 0xe3a043 };
     const colorOf = n => {
+      if (n.includes('gripper_pad')) return 0xc8553d;
+      if (n.includes('gripper_finger_a')) return 0x5aa469;
+      if (n.includes('gripper_finger_b')) return 0x77bb85;
+      if (n.includes('gripper_palm')) return 0x8c96a0;
       for (const k of ['rotor_a', 'rotor_b', 'retainer', 'stator', 'base', 'rotor', 'idler']) if (n.includes(k)) return COL[k];
       return COL.link;
     };
@@ -427,6 +432,7 @@ a { color: var(--accent); }
     // arm chain
     const world = fixed(root, m4(D.world));
     const J = {};
+    let GR = null;                         // the gripper (last chain element)
     let out = world;
     D.chain.forEach((e, idx) => {
       const elem = new THREE.Group(); elem.rotation.z = rad(e.mount); out.add(elem);
@@ -443,7 +449,17 @@ a { color: var(--accent); }
         (e.bearings || []).forEach(b => inner.add(bearingMesh(...b, plane)));
         rollCut.push(e);
       }
-      if (e.kind !== 'link') J[e.name] = e;
+      if (e.kind === 'gripper') {
+        // each finger turns about its pivot (axis +Y of the gripper frame); meshes are exported closed
+        e.fg = e.fingers.map(f => {
+          const g = new THREE.Group(); g.position.set(...f.pivot); inner.add(g);
+          const off = new THREE.Group(); off.position.set(-f.pivot[0], -f.pivot[1], -f.pivot[2]); g.add(off);
+          f.parts.forEach(n => parts.push([n, colorOf(n), off, false, null]));
+          return { g, sign: f.sign };
+        });
+        GR = e;
+      }
+      if (e.kind === 'hinge' || e.kind === 'roll') J[e.name] = e;
       out = nxt;
     });
 
@@ -471,8 +487,9 @@ a { color: var(--accent); }
     // cranks
     const CR = {};
     const KEYS = ['S1', 'S2', 'S3', 'E', 'F', 'W1', 'W2'];
-    const TUBE_COL = { S1: 0xd6452f, S2: 0x2f6fd6, S3: 0xb07aa1, E: 0x2f9b5a, F: 0xd9821a, W1: 0x8a5cd6, W2: 0x17a2b8 };
-    KEYS.forEach(k => {
+    const TUBE_COL = { S1: 0xd6452f, S2: 0x2f6fd6, S3: 0xb07aa1, E: 0x2f9b5a, F: 0xd9821a, W1: 0x8a5cd6, W2: 0x17a2b8, G: 0xd4a017 };
+    const CKEYS = GR && D.cranks.G ? KEYS.concat(['G']) : KEYS;     // the 8th crank drives the gripper
+    CKEYS.forEach(k => {
       const c = D.cranks[k];
       const g = fixed(root, m4(c.m));
       const spin = new THREE.Group(); g.add(spin);
@@ -490,6 +507,8 @@ a { color: var(--accent); }
     const tubeMats = Object.fromEntries(KEYS.map(k => [k, new THREE.MeshStandardMaterial({ color: TUBE_COL[k], roughness: 0.35, transparent: true, opacity: 0.75 })]));
     const tubeSet = {}; KEYS.forEach(k => { tubeSet[k] = [dyn(root, tubeMats[k]), dyn(root, tubeMats[k])]; });
     const cordSet = {}; KEYS.forEach(k => { cordSet[k] = [dyn(J[k].inner, cordMat), dyn(J[k].inner, cordMat)]; });
+    const gTube = GR ? dyn(root, new THREE.MeshStandardMaterial({ color: TUBE_COL.G, roughness: 0.35, transparent: true, opacity: 0.75 })) : null;
+    const gCord = GR ? dyn(GR.inner, cordMat) : null;
     let tubeMeshes = [];
 
     const P = (obj, x, y, z) => obj.localToWorld(V(x, y, z));
@@ -523,6 +542,47 @@ a { color: var(--accent); }
       }
       return pts;
     }
+    // gripper tube: from the 8th crank (spool side A) through every joint into the palm socket
+    function routeG() {
+      const ci = 7, ox = ((ci % 4) - 1.5) * 4.2, oy = (Math.floor(ci / 4) - 0.5) * 4.6;
+      const c = D.crank, cr = CR.G.g;
+      const pts = [P(cr, c.sock_x, c.r, c.block_z + 10), P(cr, c.sock_x, c.r, c.beam_z + 40)];
+      pts.push(V(ox * 2, D.beam.y1 - 6, 30 + oy), V(ox * 1.5, 0, 28 + oy), V(ox, D.beam.s1_y + 30, 22 + oy));
+      for (let i = 0; i < GR.idx; i++) {
+        const el = D.chain[i], f = ['W1', 'link_w1_w2', 'W2'].includes(el.name) ? 0.2 : 1, x = ox * f, y = oy * f;
+        if (el.kind === 'link') { pts.push(P(el.inner, x, y, 3), P(el.inner, x, y, el.out_z - 3)); }
+        else if (el.kind === 'hinge') { pts.push(P(el.inner, x, y * 0.6, el.in_z + 2), P(el.inner, x, y * 0.3, 0), P(el.mv, x * 0.5, y * 0.3, el.out_z - 2)); }
+        else { pts.push(P(el.inner, x * 0.8, y * 0.8, el.in_z + 2), P(el.inner, x * 0.8, y * 0.8, el.out_z - 4)); }
+      }
+      pts.push(P(GR.inner, 0, 0, -1), P(GR.inner, 0, 0, GR.cord.socket));
+      return pts;
+    }
+    // gripper state: opening between the pad centres (mm) -> finger angle (deg) from the CAD table
+    const GMAX = GR ? GR.open_table[GR.open_table.length - 1][1] : 0;
+    let gripMM = GMAX, gripTh = GR ? GR.theta_max : 0;
+    function interp(tab, x, ix = 1, iy = 0) {
+      for (let i = 1; i < tab.length; i++) {
+        const a = tab[i - 1], b = tab[i];
+        if (x <= b[ix] || i === tab.length - 1) { const u = Math.max(0, Math.min(1, (x - a[ix]) / ((b[ix] - a[ix]) || 1))); return a[iy] + (b[iy] - a[iy]) * u; }
+      }
+      return tab[0][iy];
+    }
+    function setGrip(mm) {
+      if (!GR) return;
+      gripMM = Math.max(0, Math.min(GMAX, mm)); gripTh = interp(GR.open_table, gripMM);
+      GR.fg.forEach(f => { f.g.rotation.y = rad(f.sign * gripTh); });
+      // cord: straight up the axis from the socket boss onto finger A's drum, wrapped to the anchor
+      const c = GR.cord, pts = [V(0, 0, c.z0), V(0, 0, c.zp)];
+      for (let i = 1; i <= 24; i++) { const a = rad((c.anchor + gripTh) * i / 24); pts.push(V(-c.px + c.R * Math.cos(a), 0, c.zp + c.R * Math.sin(a))); }
+      gCord(polyTube(pts, 0.5));
+      const turns = (GR.theta_max - gripTh) * CR.G.ratio / 360;          // cord wound in = fingers closed
+      CR.G.spin.rotation.x = turns * 2 * Math.PI;
+      const ct = $('ct7'); if (ct) ct.textContent = turns.toFixed(2);
+      const sl = $('gripS'); if (sl && document.activeElement !== sl) sl.value = Math.round(gripMM);
+      const gv = $('gripV'); if (gv) gv.textContent = `${gripMM.toFixed(0)} mm`;
+      const sp = interp(GR.force.spring, gripTh, 0, 1), cord10 = 2 * GR.force.L * 10 / GR.force.R + sp;
+      const gn = $('gripNote'); if (gn) gn.textContent = `Fingers ${gripTh.toFixed(0)}° open. Cord tension for 10 N on each pad: ${cord10.toFixed(0)} N (spring pull-back ${sp.toFixed(1)} N).`;
+    }
     function cords(k, q) {
       const e = J[k], c = e.cord;
       if (e.kind === 'hinge') {
@@ -544,7 +604,9 @@ a { color: var(--accent); }
 
     $('crankRows').innerHTML = KEYS.map((k, i) =>
       `<tr><td><span class="sw" style="background:#${TUBE_COL[k].toString(16).padStart(6, '0')}"></span> ${k}</td><td>${J[k].label}</td>` +
-      `<td class="n">${CR[k].ratio.toFixed(2)} : 1</td><td class="n" id="ct${i}">0.00</td></tr>`).join('');
+      `<td class="n">${CR[k].ratio.toFixed(2)} : 1</td><td class="n" id="ct${i}">0.00</td></tr>`).join('') +
+      (GR ? `<tr><td><span class="sw" style="background:#${TUBE_COL.G.toString(16).padStart(6, '0')}"></span> G</td><td>Gripper (1 cord)</td>` +
+        `<td class="n">${CR.G.ratio.toFixed(2)} : 1</td><td class="n" id="ct7">0.00</td></tr>` : '');
 
     // ---------- inverse kinematics (same method as arm/kinematics.py)
     const toolG = out;
@@ -766,6 +828,25 @@ a { color: var(--accent); }
           <p class="sub" id="reachMsg" style="font-size:12.5px;margin:0" aria-live="polite">Drag the gimbal to move the hand.</p>
         </div>`;
       box.prepend(div);
+      if (GR) {
+        const gd = document.createElement('div');
+        gd.style.cssText = 'display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:8px';
+        gd.innerHTML = `<div class="slider"><span><label for="gripS">Gripper opening (pad centres)</label><b id="gripV">0 mm</b></span>
+            <input type="range" id="gripS" min="0" max="${Math.floor(GMAX)}" step="1" value="${Math.floor(GMAX)}"></div>
+          <p class="sub" id="gripNote" style="font-size:12.5px;margin:0" aria-live="polite"></p>
+          <div class="row"><button type="button" id="gripZoom">Zoom gripper</button></div>`;
+        box.append(gd);
+        $('gripS').oninput = e => { setPlaying(false); setGrip(+e.target.value); };
+        $('gripZoom').onclick = () => {        // look along the finger pivots (gripper Y): the fingers swing in view
+          GR.inner.updateWorldMatrix(true, false);
+          const m = GR.inner.matrixWorld, ax = V().setFromMatrixColumn(m, 2).normalize();
+          setPlaying(false); target.setFromMatrixPosition(m).addScaledVector(ax, 55); dist = 300;
+          const u = V().setFromMatrixColumn(m, 1).normalize().negate();
+          u.addScaledVector(V(0, 0, 1), 0.25).normalize();
+          theta = Math.atan2(u.y, u.x); phi = Math.asin(Math.max(-1, Math.min(1, u.z))); placeCamera();
+        };
+        setGrip(gripMM);
+      }
       $('reachOn').onchange = e => {
         reach = e.target.checked; $('reachBox').hidden = !reach; giz.visible = reach; path = false;
         rig.joints.forEach((j, i) => { $('s' + i).disabled = reach; });
@@ -858,6 +939,7 @@ a { color: var(--accent); }
     }
     function frame() {                                      // keep the gimbal a constant size on screen
       stepTween();
+      if (GR && playing) setGrip(GMAX * (0.5 + 0.5 * Math.cos(t * 0.8)));
       if (giz.visible) { const s = camera.position.distanceTo(giz.position) / 1100; gizAx.scale.setScalar(s); marker.scale.setScalar(s); }
     }
 
@@ -874,7 +956,7 @@ a { color: var(--accent); }
       E: t => 60 + 45 * Math.sin(t * 0.7 + 0.5), F: t => 70 * Math.sin(t * 0.9), W1: t => 45 * Math.sin(t * 1.1 + 1), W2: t => 22 * Math.sin(t * 1.3) };
     return {
       title: 'Tendon Arm, 7 DOF',
-      sub: 'Printable CAD from the arm/ folder: 5 hinge modules, 2 roll modules, 6 links, 7 hand cranks. Every joint is driven by a pair of 1 mm Dyneema cords in PTFE tubes.',
+      sub: 'Printable CAD from the arm/ folder: 5 hinge modules, 2 roll modules, 6 links, a two-finger gripper, 8 hand cranks. Every joint is driven by a pair of 1 mm Dyneema cords in PTFE tubes; the gripper by one cord against a spring.',
       pass: 'Bowden tubes and cords', parts, cam: { target: [60, -120, -330], dist: 2700 }, noHalf: false, cut: rollCut,
       joints: KEYS.map(k => ({ label: J[k].label, badge: k === 'S1' ? 'shoulder' : k === 'E' ? 'elbow' : null,
         min: J[k].lo, max: J[k].hi, anim: anims[k] })),
@@ -895,7 +977,7 @@ a { color: var(--accent); }
           cords(k, v[i]);
           [-1, 1].forEach((s, n) => { const m = tubeSet[k][n](smoothTube(route(k, s), 2.0, 220)); m.visible = show; tubeMeshes.push(m); });
         });
-        KEYS.forEach(k => cordSet[k].forEach(() => {}));
+        if (GR) { const m = gTube(smoothTube(routeG(), 2.0, 260)); m.visible = show; tubeMeshes.push(m); }
       },
       togglePass: v => tubeMeshes.forEach(m => m.visible = v),
       extra, tick, pointerDown, pointerMove, pointerUp, frame,
