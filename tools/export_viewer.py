@@ -105,29 +105,51 @@ def export_arm():
         else:
             e.update(kind="link")
         chain.append(e)
-    for k, w in A.crank_parts().items():
-        dump(w, "arm_" + k, 0.4 if k == "crank_spool" else 0.15, 0.8 if k == "crank_spool" else 0.3)
-    dump(T.shoulder_beam(A.S1), "arm_torso_beam", 0.2, 0.3)
+    # ---- torso (TORSO frame) + drive units (unit frames)
+    import cadquery as cq
+    from arm import drive as DR
     from arm import balance as BL
-    bal = A.balance_parts(None, cords=False)
+    alu = [T.extrusion_solid(n).val() for n in T.extrusions()]
+    dump(cq.Workplane().add(cq.Compound.makeCompound(alu)), "arm_torso_alu", 0.2, 0.3)
+    dump(T.shoulder_beam(A.S1), "arm_torso_beam", 0.2, 0.3)          # BEAM frame
+    dump(T.shoulder_comb(), "arm_torso_comb", 0.1, 0.3)               # BEAM frame
+    dump(T.saddle(), "arm_torso_saddle", 0.2, 0.3)                    # LEVEL frame
+    dump(T.s1_hanger(), "arm_torso_hanger", 0.2, 0.3)                 # TORSO frame, right side
+    dump(T.electronics_tray(), "arm_torso_tray", 0.2, 0.3)
+    dump(T.estop_box(), "arm_torso_estop", 0.2, 0.3)
+    unit = DR.unit_parts("STS3215")
+    for k in ("frame", "tube_clip", "nut_cup"):
+        dump(unit[k], "arm_drive_" + k, 0.2, 0.3)
+    dump(unit["spool"], "arm_drive_spool", 0.4, 0.8)
+    dump(C.socket_block(), "arm_drive_socket_block", 0.2, 0.3)
+    dump(C.socket_block_a(), "arm_drive_socket_block_a", 0.2, 0.3)
+    for m in DR.MOTORS:
+        k = m.lower().replace("-", "")
+        dump(DR.adapter(m), f"arm_drive_adapter_{k}", 0.2, 0.3)
+        dump(DR.cup(m), f"arm_drive_cup_{k}", 0.2, 0.3)
+        dump(DR.motor_body(m), f"arm_drive_motor_{k}", 0.2, 0.3)
+    bal = A.balance_parts(None, cords=False)                          # BEAM frame
     meta_bal = []
     for k, w in bal.items():
         dump(w, "arm_bal_" + k, 0.2, 0.3)
         meta_bal.append("arm_bal_" + k)
-    dump(T.crank_rack(3), "arm_crank_rack", 0.2, 0.3)
+    routes = A.tube_routes()
     meta = {
-        "world": A.WORLD.tolist(),
+        "world": A.WORLD.tolist(),                 # chain base in the BEAM frame (as before)
+        "mount": A.MOUNT.tolist(),                 # right arm's BEAM frame in the TORSO frame (left = mirror x)
         "chain": chain,
-        "cranks": {j: {"m": m.tolist(), "ratio": A.crank_ratio(j)} for j, m in A.crank_frames().items()},
-        "racks": [[x, y] for x, y in A.RACK_CENTRES],
+        "drives": [{"side": s_, "joint": j, "m": m.tolist(), "ratio": A.crank_ratio(j), "motor": A.drive_motor(j),
+                    "mesh": A.drive_motor(j).lower().replace("-", "")} for (s_, j), m in A.drive_frames().items()],
+        "routes": [{"side": r["side"], "joint": r["joint"], "cord": r["cord"], "helix": r["helix"],
+                    "bend": round(r["bend"], 1), "pts": np.round(r["pts"], 1).tolist()} for r in routes],
+        "levels": [T.saddle_matrix(k)[2, 3] for k in range(T.LEVELS)],
         "balance": meta_bal,
         "balance_geo": {"x_s": BL.X_S, "b_z": BL.B_Z, "c_y": BL.C_Y, "c_z": BL.C_Z, "r": BL.R_SHEAVE,
                         "z_line": BL.Z_LINE, "y_fair": BL.Y_FAIRLEAD, "yoke": A.BALANCE_YOKE_ON},
-        "crank": {"r": C.R_SPOOL, "sock_x": C.SOCK_X, "sock_b": C.SOCK_B, "block_z": C.BLOCK_Z[0], "beam_z": C.BEAM_Z[1]},
-        "beam": {"y0": T.BEAM_Y[0], "y1": T.BEAM_Y[1], "h": T.BEAM_H, "s1_y": T.S1_Y},
+        "crank": {"r": C.R_SPOOL},
     }
     from arm import kinematics as KN
-    meta["shoulder"] = KN.shoulder_frame().tolist()
+    meta["shoulder"] = A.shoulder_frame_torso("R").tolist()      # TORSO frame (IK, gizmo, work area)
     meta["tool"] = KN.TOOL_OFFSET
     from arm import statics as ST
     for e, m in zip(meta["chain"], ST.mass_model()["elements"]):

@@ -102,7 +102,7 @@ a { color: var(--accent); }
     <nav class="tabs" aria-label="Model">
       <a href="#j1" id="tab-j1">J1 · 1 DOF</a>
       <a href="#j1b" id="tab-j1b">J1b · 2 DOF</a>
-      <a href="#arm" id="tab-arm">Arm · 7 DOF</a>
+      <a href="#arm" id="tab-arm">Arms · torso</a>
     </nav>
     <span class="concept" id="conceptTag" hidden>Concept, not CAD yet</span>
     <div class="badges" id="badges"></div>
@@ -157,18 +157,18 @@ a { color: var(--accent); }
     </div>
 
     <div class="card" id="read-arm" hidden>
-      <span class="label">Crank bank</span>
+      <span class="label">Drive column (right arm; the left arm mirrors it)</span>
       <table class="cranks">
-        <thead><tr><th>Crank</th><th>Joint</th><th style="text-align:right">Ratio</th><th style="text-align:right">Turns</th></tr></thead>
+        <thead><tr><th>Unit</th><th>Joint</th><th>Motor</th><th style="text-align:right">Ratio</th><th style="text-align:right">Spool turns</th></tr></thead>
         <tbody id="crankRows"></tbody>
       </table>
       <span class="label" style="margin-top:6px">Gravity loads (live)</span>
       <table class="cranks">
-        <thead><tr><th>Joint</th><th style="text-align:right">N·m</th><th style="text-align:right">Cord N</th><th style="text-align:right">Knob N</th><th></th></tr></thead>
+        <thead><tr><th>Joint</th><th style="text-align:right">N·m</th><th style="text-align:right">Cord N</th><th style="text-align:right">Spool N·m</th><th></th></tr></thead>
         <tbody id="loadRows"></tbody>
       </table>
       <p class="sub" id="massNote" style="font-size:12px"></p>
-      <p class="sub" style="font-size:12px">Each crank turns a spool, so its turns = joint angle × ratio. Every crank needs a ratchet or friction brake, or the arm will drop under its own weight.</p>
+      <p class="sub" style="font-size:12px">Each drive unit's motor turns one helical spool that carries both cords of its joint, so spool turns = joint angle × ratio. Spool torque = cord force × 8 mm (before Bowden friction).</p>
     </div>
 
     <div class="card">
@@ -186,13 +186,13 @@ a { color: var(--accent); }
         <li>The drive module can sit anywhere. In the torso it becomes one slot in a row of motors.</li>
       </ol>
       <ol id="how-arm" hidden>
-        <li><b>Every part here is printable CAD</b> from the <code>arm/</code> folder: hinge modules, roll modules, links, cranks and the shoulder beam. You can print them as shown.</li>
+        <li><b>Every part here is printable CAD</b> from the <code>arm/</code> folder: hinge modules, roll modules, links, drive units, saddles and the shoulder beams. The torso frame is 2020/2040 aluminium extrusion. The left arm is the mirror image of the right one and mirrors its joint values here.</li>
         <li><b>Hinges</b> (shoulder flexion and abduction, elbow, both wrist axes): a hollow drum on two bearings (608 on the shoulder, 625 on the elbow and wrist), wrapped by a pair of Dyneema cords. The tubes of the joints further out pass through the drum's open center.</li>
         <li><b>Roll joints</b> (upper-arm rotation, forearm twist): a hollow rotor on two thin-section bearings. The cords come up from the tubes, turn 90° over small idler pulleys and wrap the rotor.</li>
-        <li><b>Every joint</b> gets its own colored pair of PTFE tubes. They run from its crank, through the shoulder beam, and down the core of every joint before it.</li>
+        <li><b>Every joint</b> gets its own colored pair of PTFE tubes. They run from its drive unit in the torso column, outwards and down into a comb above the shoulder, and down the core of every joint before it. No fixed tube run bends more than 78° (S1: under 50°).</li>
         <li><b>Reach mode</b> solves the inverse kinematics in the browser (the same method as <code>arm/kinematics.py</code>). Drag the gimbal arrows or the ball to move the hand; turn on orientation and drag the rings to twist it. The 7 joint angles and crank turns follow.</li>
-        <li><b>Each crank</b> turns a spool. A pin through the crank arm locks it every 10°, and its turns = joint angle × ratio. Later each crank can be swapped for a NEMA17 + spool.</li>
-        <li><b>Gripper:</b> one cord in one tube (the 8th crank) pulls finger A's drum and closes it; two gear sectors close finger B with it. A spring between the finger tails opens both. Drag the <i>Gripper opening</i> slider.</li>
+        <li><b>Drive column:</b> 7 levels of drive units, one per arm and level, lean 12° outwards so every tube leaves heading for its shoulder. Each unit is the old crank's spool and tension blocks on two bearings, turned by a Feetech servo (STS3095 / STS3250 / STS3215) through a two-pin coupling; a Damiao DM-J4310 fits the same hub. The two S1 units hang from the clavicle over the shoulders, because S1's sockets lean 41° fore and aft.</li>
+        <li><b>Gripper:</b> one cord in one tube (the top drive unit) pulls finger A's drum and closes it; two gear sectors close finger B with it. A spring between the finger tails opens both. Drag the <i>Gripper opening</i> slider.</li>
       </ol>
     </div>
     <p class="sub" style="font-size:12px">Source, STL files and build guides: <a href="https://github.com/paszkowskiDamian/tendon-torso" target="_blank" rel="noopener">github.com/paszkowskiDamian/tendon-torso</a></p>
@@ -423,15 +423,20 @@ a { color: var(--accent); }
       return COL.link;
     };
 
-    // table + torso
+    // table + torso (TORSO frame: table top z = 0, mid-plane x = 0, forwards = -Y)
     const tableMat = material(0x6b5a48, false);
-    const table = new THREE.Mesh(new THREE.BoxGeometry(700, 520, 30), tableMat);
-    table.position.set(130, 250, -15); root.add(table);
-    parts.push(['arm_torso_beam', 0x9aa3ad, root, true]);
-    D.racks.forEach(([x, y]) => { const g = new THREE.Group(); g.position.set(x, y, 0); root.add(g); parts.push(['arm_crank_rack', 0x8c96a0, g, false]); });
+    const table = new THREE.Mesh(new THREE.BoxGeometry(1100, 1150, 30), tableMat);
+    table.position.set(0, -110, -15); root.add(table);
+    parts.push(['arm_torso_alu', 0xb8c0c8, root, false]);
+    (D.levels || []).forEach(z => { const g = new THREE.Group(); g.position.z = z; root.add(g); parts.push(['arm_torso_saddle', 0x8c96a0, g, false]); });
+    parts.push(['arm_torso_tray', 0x8c96a0, root, false], ['arm_torso_estop', 0xd6452f, root, false], ['arm_torso_hanger', 0x8c96a0, root, false]);
+    const mirG = new THREE.Group(); mirG.scale.x = -1; root.add(mirG);          // left side = mirror image in x = 0
+    parts.push(['arm_torso_hanger', 0x8c96a0, mirG, false]);
+    const armR = fixed(root, m4(D.mount)), armL = fixed(mirG, m4(D.mount));  // each arm's BEAM frame
+    [armR, armL].forEach(g => parts.push(['arm_torso_beam', 0x9aa3ad, g, true], ['arm_torso_comb', 0x30353b, g, false]));
 
     // arm chain
-    const world = fixed(root, m4(D.world));
+    const world = fixed(armR, m4(D.world));
     const J = {};
     let GR = null;                         // the gripper (last chain element)
     let out = world;
@@ -463,15 +468,38 @@ a { color: var(--accent); }
       if (e.kind === 'hinge' || e.kind === 'roll') J[e.name] = e;
       out = nxt;
     });
+    // left arm: the same chain under the mirrored mount; it copies the right arm's joint values
+    const JL = {};
+    let GRL = null, outL = fixed(armL, m4(D.world));
+    D.chain.map(e => Object.assign({}, e)).forEach(e => {
+      const elem = new THREE.Group(); elem.rotation.z = rad(e.mount); outL.add(elem);
+      const inner = new THREE.Group(); inner.position.z = -e.in_z; elem.add(inner);
+      const mv = new THREE.Group(); inner.add(mv);
+      e.static.forEach(n => parts.push([n, colorOf(n), inner, n.includes('link'), null]));
+      e.moving.forEach(n => parts.push([n, colorOf(n), mv, false, n.endsWith('_b') ? 'half' : null]));
+      const nxt = new THREE.Group(); nxt.position.z = e.out_z; mv.add(nxt);
+      e.inner = inner; e.mv = mv;
+      if (e.kind === 'gripper') {
+        e.fg = e.fingers.map(f => {
+          const g = new THREE.Group(); g.position.set(...f.pivot); inner.add(g);
+          const off = new THREE.Group(); off.position.set(-f.pivot[0], -f.pivot[1], -f.pivot[2]); g.add(off);
+          f.parts.forEach(n => parts.push([n, colorOf(n), off, false, null]));
+          return { g, sign: f.sign };
+        });
+        GRL = e;
+      }
+      if (e.kind === 'hinge' || e.kind === 'roll') JL[e.name] = e;
+      outL = nxt;
+    });
 
     // shoulder balance: masts, sheaves, anchor posts, springs (static, world)
-    (D.balance || []).forEach(n => parts.push([n, n.includes('spring') ? 0xb0b6bd : n.includes('sheave') ? 0x3f6fb5 : 0x9aa3ad, root, false]));
-    const BG = D.balance_geo, balCords = BG ? [dyn(root, M(0xf5f0e6)), dyn(root, M(0xf5f0e6))] : [];
+    [armR, armL].forEach(g => (D.balance || []).forEach(n => parts.push([n, n.includes('spring') ? 0xb0b6bd : n.includes('sheave') ? 0x3f6fb5 : 0x9aa3ad, g, false])));
+    const BG = D.balance_geo, balCords = BG ? [armR, armR, armL, armL].map(g => dyn(g, M(0xf5f0e6))) : [];
     function balanceCords() {
       if (!BG) return;
       const yoke = D.chain.find(e => e.name === BG.yoke);
       [1, -1].forEach((sx, n) => {
-        const B = yoke.mv.localToWorld(V(sx * BG.x_s, 0, BG.b_z));
+        const B = armR.worldToLocal(yoke.mv.localToWorld(V(sx * BG.x_s, 0, BG.b_z)));      // BEAM frame
         const cx = Math.sign(B.x) * BG.x_s, cy = BG.c_y, cz = BG.c_z, R = BG.r;
         const dy = B.y - cy, dz = B.z - cz, d = Math.hypot(dy, dz);
         const base = Math.atan2(dz, dy), off = Math.acos(Math.min(1, R / d));
@@ -481,35 +509,40 @@ a { color: var(--accent); }
         let end = Math.PI / 2; let t0 = th; if (t0 > end) t0 -= 2 * Math.PI;
         for (let i = 0; i <= 16; i++) { const t = t0 + (end - t0) * i / 16; pts.push(V(cx, cy + R * Math.cos(t), cz + R * Math.sin(t))); }
         pts.push(V(cx, BG.y_fair, BG.z_line));
-        balCords[n](polyTube(pts, 0.7));
+        balCords[n](polyTube(pts, 0.7)); balCords[n + 2](polyTube(pts, 0.7));
       });
     }
 
-    // cranks
-    const CR = {};
+    // drive units (drive.py): frame, socket blocks, tube clip, nut cup, motor cup + motor static;
+    // spool + horn adapter turn with the joint
+    const CR = {}, CRL = {};
     const KEYS = ['S1', 'S2', 'S3', 'E', 'F', 'W1', 'W2'];
     const TUBE_COL = { S1: 0xd6452f, S2: 0x2f6fd6, S3: 0xb07aa1, E: 0x2f9b5a, F: 0xd9821a, W1: 0x8a5cd6, W2: 0x17a2b8, G: 0xd4a017 };
-    const CKEYS = GR && D.cranks.G ? KEYS.concat(['G']) : KEYS;     // the 8th crank drives the gripper
-    CKEYS.forEach(k => {
-      const c = D.cranks[k];
-      const g = fixed(root, m4(c.m));
+    (D.drives || []).forEach(d => {
+      const g = fixed(root, m4(d.m));
       const spin = new THREE.Group(); g.add(spin);
-      ['arm_crank_frame', 'arm_crank_socket_block', 'arm_crank_nut_cup'].forEach(n => parts.push([n, 0x8c96a0, g, false]));
-      parts.push(['arm_crank_spool', 0x3f6fb5, spin, false]);
-      parts.push(['arm_crank_arm', 0x30353b, spin, false]);
-      const knobG = new THREE.Group(); spin.add(knobG);
-      parts.push(['arm_crank_knob', TUBE_COL[k], knobG, false]);
-      const lb = label(k); lb.position.set(0, 0, 70); g.add(lb);
-      CR[k] = { g, spin, ratio: c.ratio };
+      ['arm_drive_frame', d.joint === 'G' ? 'arm_drive_socket_block_a' : 'arm_drive_socket_block', 'arm_drive_tube_clip',
+        'arm_drive_nut_cup', 'arm_drive_cup_' + d.mesh].forEach(n => parts.push([n, 0x8c96a0, g, false]));
+      parts.push(['arm_drive_motor_' + d.mesh, 0x30353b, g, false]);
+      parts.push(['arm_drive_spool', 0x3f6fb5, spin, false]);
+      parts.push(['arm_drive_adapter_' + d.mesh, TUBE_COL[d.joint], spin, false]);
+      if (d.side === 'R') { const lb = label(d.joint); lb.position.set(0, -40, 40); g.add(lb); }
+      (d.side === 'R' ? CR : CRL)[d.joint] = { g, spin, ratio: d.ratio, motor: d.motor };
     });
+    // fixed tube runs drive unit -> shoulder comb / S1 socket (exported polylines, TORSO frame)
+    const RT = {};
+    (D.routes || []).forEach(r => { RT[r.side + r.joint + r.cord] = r.pts; });
+    const FR = (side, k, cord) => (RT[side + k + cord] || []).map(p => V(...p));
 
     // tendons
     const cordMat = M(0xf5f0e6);
     const tubeMats = Object.fromEntries(KEYS.map(k => [k, new THREE.MeshStandardMaterial({ color: TUBE_COL[k], roughness: 0.35, transparent: true, opacity: 0.75 })]));
-    const tubeSet = {}; KEYS.forEach(k => { tubeSet[k] = [dyn(root, tubeMats[k]), dyn(root, tubeMats[k])]; });
-    const cordSet = {}; KEYS.forEach(k => { cordSet[k] = [dyn(J[k].inner, cordMat), dyn(J[k].inner, cordMat)]; });
-    const gTube = GR ? dyn(root, new THREE.MeshStandardMaterial({ color: TUBE_COL.G, roughness: 0.35, transparent: true, opacity: 0.75 })) : null;
-    const gCord = GR ? dyn(GR.inner, cordMat) : null;
+    const tubeSet = {}, tubeSetL = {}; KEYS.forEach(k => { tubeSet[k] = [dyn(root, tubeMats[k]), dyn(root, tubeMats[k])]; tubeSetL[k] = [dyn(root, tubeMats[k]), dyn(root, tubeMats[k])]; });
+    const cordSet = {}, cordSetL = {}; KEYS.forEach(k => { cordSet[k] = [dyn(J[k].inner, cordMat), dyn(J[k].inner, cordMat)]; cordSetL[k] = [dyn(JL[k].inner, cordMat), dyn(JL[k].inner, cordMat)]; });
+    const cset = (k, n, g) => { cordSet[k][n](g); cordSetL[k][n](g.clone()); };
+    const gMat = new THREE.MeshStandardMaterial({ color: TUBE_COL.G, roughness: 0.35, transparent: true, opacity: 0.75 });
+    const gTube = GR ? dyn(root, gMat) : null, gTubeL = GR ? dyn(root, gMat) : null;
+    const gCord = GR ? dyn(GR.inner, cordMat) : null, gCordL = GRL ? dyn(GRL.inner, cordMat) : null;
     let tubeMeshes = [];
 
     const P = (obj, x, y, z) => obj.localToWorld(V(x, y, z));
@@ -524,11 +557,7 @@ a { color: var(--accent); }
     function route(k, s) {
       const e = J[k], ci = KEYS.indexOf(k);
       const ox = ((ci % 4) - 1.5) * 4.2 + s * 1.2, oy = (Math.floor(ci / 4) - 0.5) * 4.6;
-      const c = D.crank, cr = CR[k].g;
-      const sx = s < 0 ? c.sock_x : (c.sock_b ?? -c.sock_x), syy = s < 0 ? c.r : -c.r;
-      const pts = [P(cr, sx, syy, c.block_z + 10), P(cr, sx, syy, c.beam_z + 40)];
-      const by = D.beam.y1, s1y = D.beam.s1_y;
-      pts.push(V(ox * 2, by - 6, 30 + oy), V(ox * 1.5, 0, 28 + oy), V(ox, s1y + 30, 22 + oy));
+      const pts = [];                          // the part inside the arm (the fixed run: FR)
       // through every element before this joint
       for (let i = 0; i < e.idx; i++) {
         const el = D.chain[i];
@@ -546,9 +575,7 @@ a { color: var(--accent); }
     // gripper tube: from the 8th crank (spool side A) through every joint into the palm socket
     function routeG() {
       const ci = 7, ox = ((ci % 4) - 1.5) * 4.2, oy = (Math.floor(ci / 4) - 0.5) * 4.6;
-      const c = D.crank, cr = CR.G.g;
-      const pts = [P(cr, c.sock_x, c.r, c.block_z + 10), P(cr, c.sock_x, c.r, c.beam_z + 40)];
-      pts.push(V(ox * 2, D.beam.y1 - 6, 30 + oy), V(ox * 1.5, 0, 28 + oy), V(ox, D.beam.s1_y + 30, 22 + oy));
+      const pts = [];
       for (let i = 0; i < GR.idx; i++) {
         const el = D.chain[i], f = ['W1', 'link_w1_w2', 'W2'].includes(el.name) ? 0.2 : 1, x = ox * f, y = oy * f;
         if (el.kind === 'link') { pts.push(P(el.inner, x, y, 3), P(el.inner, x, y, el.out_z - 3)); }
@@ -572,12 +599,13 @@ a { color: var(--accent); }
       if (!GR) return;
       gripMM = Math.max(0, Math.min(GMAX, mm)); gripTh = interp(GR.open_table, gripMM);
       GR.fg.forEach(f => { f.g.rotation.y = rad(f.sign * gripTh); });
+      if (GRL) GRL.fg.forEach(f => { f.g.rotation.y = rad(f.sign * gripTh); });
       // cord: straight up the axis from the socket boss onto finger A's drum, wrapped to the anchor
       const c = GR.cord, pts = [V(0, 0, c.z0), V(0, 0, c.zp)];
       for (let i = 1; i <= 24; i++) { const a = rad((c.anchor + gripTh) * i / 24); pts.push(V(-c.px + c.R * Math.cos(a), 0, c.zp + c.R * Math.sin(a))); }
-      gCord(polyTube(pts, 0.5));
+      gCord(polyTube(pts, 0.5)); if (gCordL) gCordL(polyTube(pts, 0.5));
       const turns = (GR.theta_max - gripTh) * CR.G.ratio / 360;          // cord wound in = fingers closed
-      CR.G.spin.rotation.x = turns * 2 * Math.PI;
+      CR.G.spin.rotation.x = turns * 2 * Math.PI; if (CRL.G) CRL.G.spin.rotation.x = turns * 2 * Math.PI;
       const ct = $('ct7'); if (ct) ct.textContent = turns.toFixed(2);
       const sl = $('gripS'); if (sl && document.activeElement !== sl) sl.value = Math.round(gripMM);
       const gv = $('gripV'); if (gv) gv.textContent = `${gripMM.toFixed(0)} mm`;
@@ -588,8 +616,8 @@ a { color: var(--accent); }
       const e = J[k], c = e.cord;
       if (e.kind === 'hinge') {
         const A = V(-c.gx, c.ay, c.az), B = V(c.gx, -c.ay, c.az);
-        cordSet[k][0](polyTube([A].concat(arc(-c.gx, 0, 0, c.R, c.phi, c.phi + c.wa + q, 30)), 0.6));
-        cordSet[k][1](polyTube([B].concat(arc(c.gx, 0, 0, c.R, 180 - c.phi, 180 - c.phi - c.wb + q, 30)), 0.6));
+        cset(k, 0, polyTube([A].concat(arc(-c.gx, 0, 0, c.R, c.phi, c.phi + c.wa + q, 30)), 0.6));
+        cset(k, 1, polyTube([B].concat(arc(c.gx, 0, 0, c.R, 180 - c.phi, 180 - c.phi - c.wb + q, 30)), 0.6));
       } else {
         // cord from the inclined socket (y0 at the plate top) over the idler to the drum
         const tl = c.tilt ?? 0, kt = Math.tan(rad(tl));
@@ -598,16 +626,16 @@ a { color: var(--accent); }
           return pts; };
         const ringA = []; for (let i = 0; i <= 40; i++) { const a = rad(-(c.wa - q) * i / 40); ringA.push(V(c.R * Math.cos(a), c.R * Math.sin(a), c.za)); }
         const ringB = []; for (let i = 0; i <= 40; i++) { const a = rad(180 + (c.wb + q) * i / 40); ringB.push(V(c.R * Math.cos(a), c.R * Math.sin(a), c.zb)); }
-        cordSet[k][0](polyTube(idl(c.sx, c.za, c.ya0 ?? c.sy).concat(ringA), 0.6));
-        cordSet[k][1](polyTube(idl(-c.sx, c.zb, c.yb0 ?? c.sy).concat(ringB), 0.6));
+        cset(k, 0, polyTube(idl(c.sx, c.za, c.ya0 ?? c.sy).concat(ringA), 0.6));
+        cset(k, 1, polyTube(idl(-c.sx, c.zb, c.yb0 ?? c.sy).concat(ringB), 0.6));
       }
     }
 
     $('crankRows').innerHTML = KEYS.map((k, i) =>
-      `<tr><td><span class="sw" style="background:#${TUBE_COL[k].toString(16).padStart(6, '0')}"></span> ${k}</td><td>${J[k].label}</td>` +
+      `<tr><td><span class="sw" style="background:#${TUBE_COL[k].toString(16).padStart(6, '0')}"></span> ${k}</td><td>${J[k].label}</td><td>${CR[k].motor}</td>` +
       `<td class="n">${CR[k].ratio.toFixed(2)} : 1</td><td class="n" id="ct${i}">0.00</td></tr>`).join('') +
       (GR ? `<tr><td><span class="sw" style="background:#${TUBE_COL.G.toString(16).padStart(6, '0')}"></span> G</td><td>Gripper (1 cord)</td>` +
-        `<td class="n">${CR.G.ratio.toFixed(2)} : 1</td><td class="n" id="ct7">0.00</td></tr>` : '');
+        `<td>${CR.G.motor}</td><td class="n">${CR.G.ratio.toFixed(2)} : 1</td><td class="n" id="ct7">0.00</td></tr>` : '');
 
     // ---------- inverse kinematics (same method as arm/kinematics.py)
     const toolG = out;
@@ -615,7 +643,8 @@ a { color: var(--accent); }
     const SF3i = new THREE.Matrix3().setFromMatrix4(SFi);
 
     // ---------- recommended work area (tools/workspace_study.py), drawn in the shoulder frame
-    const wsG = new THREE.Group(); wsG.matrixAutoUpdate = false; wsG.matrix.copy(SF); root.add(wsG);
+    const wsAll = new THREE.Group(); root.add(wsAll);
+    const wsG = new THREE.Group(); wsG.matrixAutoUpdate = false; wsG.matrix.copy(SF); wsAll.add(wsG);
     if (D.workspace) {
       const b = D.workspace.box, w = b.x1 - b.x0, h = b.y1 - b.y0;
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: 0x2f9b5a, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
@@ -624,6 +653,7 @@ a { color: var(--accent); }
       edge.position.copy(pl.position); wsG.add(edge);
       const sw = new THREE.Mesh(new THREE.SphereGeometry(8, 16, 12), new THREE.MeshBasicMaterial({ color: 0x2f9b5a }));
       sw.position.set(...D.workspace.sweet); wsG.add(sw);
+      const wm = new THREE.Group(); wm.scale.x = -1; wsAll.add(wm); wm.add(wsG.clone());   // the left arm's area
     }
     const KJ = KEYS.map(k => J[k]);
     const LO = KJ.map(e => e.lo), HI = KJ.map(e => e.hi);
@@ -959,26 +989,29 @@ a { color: var(--accent); }
     function updateLoads() {
       const el = $('loadRows'); if (!el) return;
       const tau = gravTau(), T = cordN(tau);
-      const knob = T.map(x => x * STAT.spool_r / STAT.knob_r);
+      const knob = T.map(x => x * STAT.spool_r / 1000);
       const maxT = Math.max(...T);
       el.innerHTML = KEYS.map((k, i) => `<tr><td>${k}</td><td class="n">${tau[i].toFixed(2)}</td><td class="n">${T[i].toFixed(0)}</td>` +
-        `<td class="n">${knob[i].toFixed(1)}</td><td style="width:34%"><span style="display:block;height:7px;border-radius:3px;background:${T[i] > 180 ? 'var(--flex)' : T[i] > 90 ? 'var(--flex2)' : 'var(--pass)'};width:${(T[i] / Math.max(maxT, 1) * 100).toFixed(0)}%"></span></td></tr>`).join('');
+        `<td class="n">${knob[i].toFixed(2)}</td><td style="width:34%"><span style="display:block;height:7px;border-radius:3px;background:${T[i] > 180 ? 'var(--flex)' : T[i] > 90 ? 'var(--flex2)' : 'var(--pass)'};width:${(T[i] / Math.max(maxT, 1) * 100).toFixed(0)}%"></span></td></tr>`).join('');
       $('massNote').textContent = `Arm ${STAT.mass_kg.toFixed(2)} kg + ${STAT.payload} kg payload; cord = |torque| / drum radius + ${STAT.pretension} N pretension.`;
     }
     const anims = { S1: t => 40 + 45 * Math.sin(t * 0.45), S2: t => 30 + 28 * Math.sin(t * 0.33 + 1), S3: t => 45 * Math.sin(t * 0.55),
       E: t => 60 + 45 * Math.sin(t * 0.7 + 0.5), F: t => 70 * Math.sin(t * 0.9), W1: t => 45 * Math.sin(t * 1.1 + 1), W2: t => 22 * Math.sin(t * 1.3) };
     return {
-      title: 'Tendon Arm, 7 DOF',
-      sub: 'Printable CAD from the arm/ folder: 5 hinge modules, 2 roll modules, 6 links, a two-finger gripper, 8 hand cranks. Every joint is driven by a pair of 1 mm Dyneema cords in PTFE tubes; the gripper by one cord against a spring.',
-      pass: 'Bowden tubes and cords', parts, cam: { target: [60, -120, -330], dist: 2700 }, noHalf: false, cut: rollCut, ws: wsG,
+      title: 'Two Tendon Arms on a Torso',
+      sub: 'Printable CAD from the arm/ folder: two mirror-image 7-DOF arms with two-finger grippers on a 2020/2040 torso. A column of 16 servo drive units (one spool per joint) pulls 1 mm Dyneema cords through PTFE tubes; shoulders 350 mm apart, 650 mm above the table.',
+      pass: 'Bowden tubes and cords', parts, cam: { target: [0, -150, 620], dist: 3400 }, noHalf: false, cut: rollCut, ws: wsAll,
       joints: KEYS.map(k => ({ label: J[k].label, badge: k === 'S1' ? 'shoulder' : k === 'E' ? 'elbow' : null,
         min: J[k].lo, max: J[k].hi, anim: anims[k] })),
       set(v) {
         KEYS.forEach((k, i) => {
           const e = J[k];
           if (e.kind === 'hinge') e.mv.rotation.x = rad(v[i]); else e.mv.rotation.z = rad(v[i]);
+          const el = JL[k];
+          if (el.kind === 'hinge') el.mv.rotation.x = rad(v[i]); else el.mv.rotation.z = rad(v[i]);
           const turns = v[i] * CR[k].ratio / 360;
           CR[k].spin.rotation.x = turns * 2 * Math.PI;
+          if (CRL[k]) CRL[k].spin.rotation.x = turns * 2 * Math.PI;
           const ct = $('ct' + i); if (ct) ct.textContent = turns.toFixed(2);
         });
         root.updateMatrixWorld(true);
@@ -986,11 +1019,20 @@ a { color: var(--accent); }
         balanceCords();
         const show = $('pass').checked;
         tubeMeshes = [];
+        const mx = p => V(-p.x, p.y, p.z);              // the left arm is the mirror image
         KEYS.forEach((k, i) => {
           cords(k, v[i]);
-          [-1, 1].forEach((s, n) => { const m = tubeSet[k][n](smoothTube(route(k, s), 2.0, 220)); m.visible = show; tubeMeshes.push(m); });
+          [-1, 1].forEach((s, n) => {
+            const cd = s < 0 ? 'A' : 'B', ch = route(k, s);
+            const m = tubeSet[k][n](smoothTube(FR('R', k, cd).concat(ch), 2.0, 300)); m.visible = show; tubeMeshes.push(m);
+            const ml = tubeSetL[k][n](smoothTube(FR('L', k, cd).concat(ch.map(mx)), 2.0, 300)); ml.visible = show; tubeMeshes.push(ml);
+          });
         });
-        if (GR) { const m = gTube(smoothTube(routeG(), 2.0, 260)); m.visible = show; tubeMeshes.push(m); }
+        if (GR) {
+          const ch = routeG();
+          const m = gTube(smoothTube(FR('R', 'G', 'A').concat(ch), 2.0, 320)); m.visible = show; tubeMeshes.push(m);
+          const ml = gTubeL(smoothTube(FR('L', 'G', 'A').concat(ch.map(mx)), 2.0, 320)); ml.visible = show; tubeMeshes.push(ml);
+        }
       },
       togglePass: v => tubeMeshes.forEach(m => m.visible = v),
       extra, tick, pointerDown, pointerMove, pointerUp, frame,
