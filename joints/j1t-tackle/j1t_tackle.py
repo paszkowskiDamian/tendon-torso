@@ -890,8 +890,7 @@ if __name__ == "__main__":
     export(spacer(SPACER_MID_L), "spacer_mid")
     export(spacer(SPACER_PP_L), "spacer_plate")
     export(spacer(SPACER_PP_L, od=SPACER_BAR_OD), "spacer_bar")
-    asm = assembly()
-    cq.exporters.export(cq.Compound.makeCompound([v.val() for v in asm.values()]), str(OUT / "assembly_preview.step"))
+    # (no assembly_preview.step for this joint: with the printed threads it runs to 80 MB; use the viewer or tools/check_j1t.py renders)
     print(f"ratio at 0 deg {RATIO0:.2f}, spool at {SPOOL_C}, helix phase in/out {SPOOL_IN:.1f}/{SPOOL_OUT:.1f}, "
           f"DX {DX:.2f}, stations F1 {F1_ST} F2 {F2_ST}, sheave spacers {SPACER_SHEAVE}")
     print("done ->", OUT)
