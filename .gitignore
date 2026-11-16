@@ -7,3 +7,4 @@ docs/workspace_cells.json
 data/
 outputs/
 .venv-train/
+joints/j1t-tackle/stl/assembly_preview.step

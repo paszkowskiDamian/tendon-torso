@@ -31,6 +31,8 @@ Bowden sheaths (cable inside a tube, like bike brakes) avoid coupling completely
 | **J1** | 1-DOF hinge, servo in base, open center | tendon pair, tensioning, printability, pass-through | **designed**, ready to print |
 | **J1-S** | J1 with NEMA17 + 6:1 tendon reduction, Bowden-ready center | torque via tendon ratio, stepper stiffness, Bowden friction & coupling | **designed**, ready to print |
 | **J1b** | J1-S elbow + J2 wrist module, J2 driven by Bowden cables from a separate drive module | multi-joint routing, Bowden friction & coupling, swappable J2 orientation | **designed**, ready to print |
+| **J1-H** | Hand-cranked hinge on a base plate: r10 spool -> r30 drum (3:1), weighted lever, sliding frame for tension | feel of a tendon joint by hand, force ratio, tension/backlash/creep with 2.5 mm cord | **designed**, ready to print |
+| **J1-R** | Rolling elbow like LIMS: two r30 pulleys, side plates, crossed restraint cords, drive over a free idler, J1-H crank (3:1) | rolling joint stiffness and play, constant moment arm, 160 deg range, friction over bearings only | **designed**, ready to print |
 | G1 | Simple gripper: 1 tendon + return spring (or antagonistic pair) at the end of J1b | end effector driven from far away | |
 | S1 | 2-DOF shoulder with an open center | the hard routing problem | covered by A1 (S1 + S2 hinge modules) |
 | **A1** | Full 7-DOF arm, hand-cranked: hinge + roll module families, links, crank bank, shoulder beam | everything together; friction over long tube runs | **designed**, all parts print-ready ([arm/](../arm/)) |
