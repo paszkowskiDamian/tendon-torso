@@ -15,6 +15,7 @@ We build it up one joint at a time.
 | [J1b: 2-DOF, J1-S elbow + J2 wrist, both motors remote (J2 via Bowden)](joints/j1b-2dof/) | designed, STL ready, **not printed/tested yet** |
 | [J1-H: hand-cranked hinge, 3:1 tendon force multiplication, weighted lever, open centre](joints/j1h-hand/) | designed, STL ready, all parts pass the printability check, **not printed/tested yet** |
 | [J1-R: LIMS-style rolling elbow, crossed restraint cords, free idler drive, same 3:1 hand crank](joints/j1r-rolling/) | designed, STL ready, CAD-checked, **not printed/tested yet** |
+| [J1-T: hand-held rolling elbow, block-and-tackle reduction (5.3:1 at 0°), knob in the hand, plate-sandwich links, all screws printed, constant-length pass-through grooves](joints/j1t-tackle/) | designed, STL ready, CAD-checked, **not printed/tested yet** |
 | [**Two 7-DOF arms + grippers on a torso**](arm/), shoulder (3), elbow, forearm twist, wrist (2), two-finger gripper on one cord; 16 servo drive units in the torso column | designed, all 57 part files print-ready and CAD-checked, **not printed yet** |
 | Second arm, motors | see [roadmap](docs/roadmap.md) |
 | [MuJoCo simulation](docs/sim.md): both arms on the torso, pick-and-place scene, scripted IK demos, LeRobot dataset recording, ACT training + evaluation | runs; scripted demos 100 %, ACT policy trained in sim 84 % on unseen scenes |
@@ -33,6 +34,7 @@ joints/j1s-hinge/     J1-S (stepper, 6:1, Bowden center)
 joints/j1b-2dof/      J1b: J1-S + J2 wrist module + Bowden drive module
 joints/j1h-hand/      J1-H: hand-cranked bench rig, 3:1 drum/spool ratio, 2.5 mm cord
 joints/j1r-rolling/   J1-R: cable-constrained rolling elbow (LIMS style) on the J1-H crank
+joints/j1t-tackle/    J1-T: hand-held rolling elbow, block-and-tackle drive, printed screws, pass-through grooves
 joints/common/        shared CAD helpers
 arm/                  the two 7-DOF arms + grippers: modules, links, gripper, drive units, torso, STLs, build guide
 arm/kinematics.py     forward + inverse kinematics (python -m arm.ik X Y Z), see docs/kinematics.md
