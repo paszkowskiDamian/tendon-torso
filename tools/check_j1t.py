@@ -64,7 +64,7 @@ def fuse(parts):
 
 
 if __name__ == "__main__":
-    singles = {"plate_handle": J.plate_handle(), "plate_forearm": J.plate_forearm(), "disc_thread": J.disc("thread"), "disc_pocket": J.disc("pocket"), "sheave": J.sheave(),
+    singles = {"plate_handle": J.plate_handle(), "plate_forearm": J.plate_forearm(), "disc": J.disc(), "sheave": J.sheave(),
                "anchor_ring": J.anchor_ring(), "guide": J.guide(), "centre_link": J.centre_link(), "spool": J.spool(),
                "knob": J.knob(), "grip": J.grip(), "bolt": J.bolt(), "bolt_block": J.block_bolt(), "bolt_pin": J.pin_bolt(), "bolt_spool": J.spool_bolt(), "nut": J.nut()}
     for n, w in singles.items():
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     print(f"\nratio (elbow torque / knob torque) = {J.RATIO0:.2f} cos(theta/2)-ish; spool r {J.R_SPOOL}, {J.N_PASS} passes, blocks at {J.H_BLK} mm")
     L0 = {k: path_length(v) for k, v in J.routing(0.0, n_arc=90).items()}
     print("cord length change vs 0 deg (F shortens, E lengthens, F + S + E and X1, X2, T1 must stay constant):")
-    for th in (-20, 0, 30, 60, 90, 120, 130):
+    for th in (0, 30, 60, 90, 120, 150, 180):
         L = {k: path_length(v) for k, v in J.routing(th, n_arc=90).items()}
         print(f"  {th:+4d} deg: " + "  ".join(f"{k} {L[k] - L0[k]:+7.2f}" for k in ("F", "E", "X1", "X2", "T1"))
               + f"   F+S+E {sum(L[k] - L0[k] for k in ('F', 'S', 'E')):+6.2f}   ratio {J.ratio(th):4.2f}  knob {J.spool_turns(th) / 360:+5.2f} turns")
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     arm_static = fuse([v for k, v in arm.items() if k not in wheels])
     arm_sheaves = fuse([v for k, v in arm.items() if k in wheels])
     print("\ncord-in-groove test (0.4 mm balls, volume inside the parts; 0 = free):")
-    for th in (-20.0, 0.0, 70.0, 130.0):
+    for th in (0.0, 60.0, 120.0, 180.0):
         fore = J.forearm_at(th)
         fore_all = fuse(list(fore.values()))
         sp = J.spool_parts(th)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     print(f"  negative control (balls 1.6 mm off the X1 groove): {sum(vol(ball(p), arm_static) for p in bad):.3f} (must be > 0)")
 
     print("\nstraight cord runs (2.5 mm rods) vs parts, should be 0:")
-    for th in (-20.0, 0.0, 70.0, 130.0):
+    for th in (0.0, 60.0, 120.0, 175.0):
         fore_all = fuse(list(J.forearm_at(th).values()))
         pins = fuse(list(J.pin_parts(th).values()))
         sp = J.spool_parts(th)
@@ -122,11 +122,30 @@ if __name__ == "__main__":
                         tot[f"{cord}/{nm}"] = tot.get(f"{cord}/{nm}", 0.0) + v
         print(f"  theta {th:+5.0f}: {sum(tot.values()):.3f} mm3" + (f"  {tot}" if tot else ""))
 
+    print("\nwithin each link: bolt heads, nuts, washers, spacers vs plates and discs (overlap mm3, must be 0):")
+    for nm, parts in (("upper arm", arm), ("forearm", J.link_parts(2))):
+        frames = [v for k, v in parts.items() if k.startswith("plate") or k.startswith("disc")]
+        tot = {}
+        for k, v in parts.items():
+            if k.startswith("plate") or k.startswith("disc") or k == "grip":
+                continue
+            if k.endswith("_bolt"):           # printed threads: the model does not screw the bolt to the matching phase, so take the best of 4
+                bb = v.val().BoundingBox()
+                yc, zc = (bb.ymin + bb.ymax) / 2, (bb.zmin + bb.zmax) / 2
+                o = min(sum(vol(v.rotate((0, yc, zc), (1, yc, zc), ph), f) for f in frames) for ph in (0, 90, 180, 270))
+            else:
+                o = sum(vol(v, f) for f in frames)
+            if o > 1e-3:
+                tot[k] = round(o, 2)
+        print(f"  {nm}: {sum(tot.values()):.2f}" + (f"  {tot}" if tot else ""))
+    sp0 = J.spool_parts(0.0)
+    o = sum(vol(sp0[k], arm[f]) for k in ("spool_bolt", "knob", "knob_nut") for f in ("plate_p", "plate_n"))
+    print(f"  spool bolt / knob vs handle plates: {o:.2f}")
     print("\nforearm (all parts) vs upper arm (all parts), centre links vs block bolts, knob vs all (overlap mm3):")
     arm_all = fuse(list(arm.values()))
     sp0 = J.spool_parts(0.0)
     knob0 = sp0["knob"]
-    for th in (-40, -30, -20, 0, 45, 90, 120, 130, 140, 160):
+    for th in (-10, 0, 45, 90, 135, 170, 180, 190):
         fore_all = fuse(list(J.forearm_at(th).values()))
         pins = J.pin_parts(th)
         links = Group([pins["link_a"], pins["link_b"]])
@@ -169,24 +188,24 @@ if __name__ == "__main__":
             out += [(a, b, ccol[cord]) for a, b in zip(pts[:-1], pts[1:])]
         return out
 
-    th = 40.0
+    th = 60.0
     asm = J.assembly(th)
     render([(to_mesh(v), col(k), 1.0) for k, v in asm.items()], IMG / "j1t_assembly.png", elev=22, azim=-55, size=8, lines=lines(th))
     # side view without the +X plates, links and knob: the tackle and cords
-    hide = {"arm_plate_p", "fore_plate_p", "arm_disc_p", "fore_disc_p", "link_b", "knob", "knob_nut", "spool_w+42", "spool_w+36"}
-    keep = {k: v for k, v in asm.items() if k not in hide and not k.endswith("_nut") and "pinp" not in k and "pin_w+" not in k}
+    hide = {"arm_plate_p", "fore_plate_p", "arm_disc_p", "fore_disc_p", "link_b", "knob", "knob_nut"}
+    keep = {k: v for k, v in asm.items() if k not in hide and not k.endswith("_nut") and "pinp" not in k and "pin_w+" not in k and not k.startswith("spool_w+")}
     render([(to_mesh(v), col(k), 1.0) for k, v in keep.items()], IMG / "j1t_side.png", elev=0, azim=0, size=8, lines=lines(th))
     # range: forearm at 4 angles, cords of the tackle
     base = [(to_mesh(v), col(k), 1.0) for k, v in J.link_parts(1).items() if k not in ("plate_p",)]
     ln = []
-    for a, c in ((-20, "#76b7b2"), (0, "#59a14f"), (90, "#b07aa1"), (130, "#d1495b")):
+    for a, c in ((0, "#59a14f"), (60, "#76b7b2"), (120, "#b07aa1"), (180, "#d1495b")):
         base += [(to_mesh(v), c, 0.35) for k, v in J.forearm_at(a).items() if k not in ("plate_p",)]
         ln += lines(a, ("F", "E", "T1"))
     render(base, IMG / "j1t_range.png", elev=0, azim=0, size=8, lines=ln)
     # pass-through demo: T1 at three angles, discs only
     discs = [(to_mesh(J.link_parts(1)[k]), "#c7ccd1", 0.18) for k in ("disc_p", "disc_n")]
     ln = []
-    for a, c in ((0, "#59a14f"), (70, "#b07aa1"), (130, "#d1495b")):
+    for a, c in ((0, "#59a14f"), (90, "#b07aa1"), (180, "#d1495b")):
         discs += [(to_mesh(v), c, 0.12) for k, v in J.forearm_at(a).items() if k.startswith("fore_disc")]
         ln += [(p, q, c) for p, q, _ in lines(a, ("T1",))]
     render(discs, IMG / "j1t_passthrough.png", elev=0, azim=0, size=7, lines=ln)
